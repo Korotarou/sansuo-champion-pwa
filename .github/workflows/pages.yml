@@ -59,8 +59,10 @@ jobs:
       - name: Remove transfer-only sources
         run: rm -rf .parts .gzparts
 
-      - name: Setup Pages
+      - name: Setup and enable Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
