@@ -3,12 +3,12 @@
   "short_name":"算数王438",
   "description":"最難関中学算数・ジュニア算数オリンピック・算数オリンピックにつながる初見対応力、発想力、説明力、再現性を鍛えるPWA",
   "start_url":"./",
+  "scope":"./",
   "display":"standalone",
   "background_color":"#071225",
   "theme_color":"#071225",
   "orientation":"any",
   "icons":[
-    {"src":"assets/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
-    {"src":"assets/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+    {"src":"assets/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
   ]
 }
