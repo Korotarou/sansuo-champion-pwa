@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#071225" />
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="算数王" />
+  <title>算数王｜年間438問・最難関・ジュニア算オリ・算数オリンピック</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <aside class="sidebar" aria-label="メインナビゲーション">
+      <div class="brand">
+        <div class="brand-mark">Σ</div>
+        <div><div class="brand-name">算数王</div><div class="brand-sub">THINK DEEPER</div></div>
+      </div>
+      <nav id="nav"></nav>
+      <div class="profile-mini" id="profileMini"></div>
+    </aside>
+
+    <main class="main" id="main" tabindex="-1"></main>
+
+    <nav class="bottom-nav" id="bottomNav" aria-label="モバイルナビゲーション"></nav>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="modalRoot"></div>
+  <script src="problems.js"></script>
+  <script src="problem_engine.js"></script>
+  <script src="all_problems.js"></script>
+  <script src="curriculum.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
