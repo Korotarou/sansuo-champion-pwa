@@ -23,12 +23,50 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Reconstruct runtime assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .gzparts/app.js.gz.b64.* | base64 -d | gunzip > app.js
+          cat .gzparts/problem_engine.js.gz.b64.* | base64 -d | gunzip > problem_engine.js
+          cat .gzparts/problems.js.gz.b64.* | base64 -d | gunzip > problems.js
+          test -s app.js
+          test -s problem_engine.js
+          test -s problems.js
+          node --check app.js
+          node --check problem_engine.js
+          node --check problems.js
+
+      - name: Verify PWA structure and privacy
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f index.html
+          test -f styles.css
+          test -f curriculum.js
+          test -f all_problems.js
+          test -f sw.js
+          test -f manifest.webmanifest
+          test -f robots.txt
+          test -f assets/icon.svg
+          test -f .nojekyll
+          if grep -R --exclude-dir=.git --exclude-dir=.parts --exclude-dir=.gzparts -n "隼" .; then
+            echo "Public source contains a personal name" >&2
+            exit 1
+          fi
+
+      - name: Remove transfer-only sources
+        run: rm -rf .parts .gzparts
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
