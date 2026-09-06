@@ -37,6 +37,47 @@ jobs:
           node --check app.js
           node --check problem_engine.js
           node --check problems.js
+          node --check sapix-analyzer.js
+          node --check parent-dashboard.js
+          grep -q 'sapix-analyzer.js' index.html
+          grep -q 'parent-dashboard.js' index.html
+
+      - name: Synthetic SAPIX parser test
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          global.window = {};
+          eval(fs.readFileSync('sapix-analyzer.js','utf8'));
+          let q = '';
+          for (let i=1;i<=30;i++) {
+            const section=Math.ceil(i/5), sub=((i-1)%5)+1;
+            q += section+'-('+sub+') 5 '+(i%4===0?'×':'○')+' '+(95-i*2.3).toFixed(1)+' ';
+          }
+          const text = [
+            '夏期講習マンスリー確認テスト＜４年生＞',
+            '2026年8月27日 実施',
+            '4科目計 306 / 500 52.7',
+            '算 数 95 / 150 55.6',
+            '国 語 88 / 150 47.6',
+            '理 科 65 / 100 52.5',
+            '社 会 58 / 100 51.7',
+            '分野 得点/配点 平均点',
+            '1 計算問題 10 / 20 14.1',
+            '2 小問集合 25 / 45 26.0',
+            '3 平面図形 20 / 25 14.8',
+            '4 立体図形 25 / 25 9.2',
+            '5 規則性 5 / 20 9.0',
+            '6 場合の数 10 / 15 2.7',
+            '---PAGE--- 正答率一覧 '+q
+          ].join(' ');
+          const a = window.SapixAnalyzer.analyzeText(text,'fixture');
+          if (a.summary.math.dev !== 55.6) throw new Error('math summary parse failed');
+          if (a.parseQuality.sectionsTotal !== 150) throw new Error('section parse failed');
+          if (a.parseQuality.questionsTotal !== 150 || a.parseQuality.questionCount !== 30) throw new Error('question parse failed');
+          console.log('SAPIX parser fixture PASS');
+          NODE
 
       - name: Verify PWA structure and privacy
         shell: bash
