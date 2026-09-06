@@ -52,6 +52,7 @@
         enabled: alphaGoal.enabled !== false,
         label: alphaGoal.label || 'SAPIX α1入室',
         currentClass: alphaGoal.currentClass || '',
+        margin: Number.isFinite(Number(alphaGoal.margin)) ? Math.max(0,Math.min(50,Number(alphaGoal.margin))) : 0,
         cutoffs: alphaGoal.cutoffs && typeof alphaGoal.cutoffs==='object' ? alphaGoal.cutoffs : {}
       }
     };
@@ -279,6 +280,66 @@
     });
   }
 
+  function alphaPlanReport(ds,recovery,longitudinal) {
+    if (!window.Alpha1Planner) return null;
+    try {
+      return window.Alpha1Planner.analyze(
+        ds.sapixAnalyses || [],
+        ds.alphaGoal || {},
+        recovery && recovery.summary ? recovery.summary : null,
+        longitudinal || null
+      );
+    } catch (e) { return null; }
+  }
+
+  function alphaRouteText(plan) {
+    if (!plan || plan.scenarioTarget===null) return '実際のα1基準点を入力すると、得点ルートを作ります。';
+    if (plan.routeStatus==='at-or-above') return '直近実基準＋余裕点のシナリオでは、今回得点が目標以上です。次回は再現性を優先します。';
+    if (plan.routeStatus==='must-only') return '正答率70%以上の取りこぼし回収だけで、今回の差を埋められる構造です。難問追加は後回しです。';
+    if (plan.routeStatus==='within-50plus') return '正答率70%以上＋50〜70%の取りこぼし回収で、今回の差を埋められる構造です。';
+    if (plan.routeStatus==='needs-30to50') return '正答率50%以上をすべて回収しても不足し、30〜50%帯の問題も一部必要な構造です。';
+    return '算数の正答率30%以上の失点をすべて回収しても差が残ります。他科の底上げか、より難しい問題の獲得が必要です。';
+  }
+
+  function alphaPlanHtml(plan) {
+    if (!plan || !plan.latest) {
+      return '<div class="pd-alpha-plan-empty"><b>SAPIXテストを取り込むと、α1への得点ルートを作ります。</b></div>';
+    }
+    if (plan.scenarioTarget===null) {
+      return '<div class="pd-alpha-plan-empty"><b>まず上の「このテストのα1基準点」を入力してください。</b><p>基準点を推測せず、実値がある回だけ得点設計します。</p></div>';
+    }
+    const routeRows=(plan.route.steps||[]).map(function(x) {
+      const cls=x.key==='must'?'must':x.key==='target'?'target':'growth';
+      return '<div class="pd-alpha-route-row '+cls+'"><div><b>'+esc(x.label)+'</b><small>今回の失点 '+x.available+'点</small></div><span>シナリオで必要 '+(x.use==null?'—':x.use)+'点</span></div>';
+    }).join('');
+    const subjectRows=(plan.subjectRoles||[]).map(function(r) {
+      const cls=r.role==='強み'?'strong':r.role==='底上げ候補'?'weak':'';
+      return '<div class="pd-alpha-subject '+cls+'"><div><b>'+esc(r.label)+'</b><span>'+esc(r.role)+'</span></div><div><strong>'+esc(r.score==null?'—':r.score)+' / '+esc(r.max==null?'—':r.max)+'</strong><small>偏差値 '+esc(r.dev==null?'—':r.dev)+'</small></div></div>';
+    }).join('');
+    const process=(plan.processTargets||[]).map(function(x,i) {
+      return '<div class="pd-alpha-process"><span>'+(i+1)+'</span><div><b>'+esc(x.area)+'｜'+esc(x.target)+'</b><small>'+esc(x.reason)+'</small></div></div>';
+    }).join('');
+    const h=plan.cutoffHistory||{};
+    const history=h.count
+      ? '登録済み実基準 '+h.count+'回：'+h.min+'〜'+h.max+'点（中央値 '+h.median+'点）'
+      : 'α1実基準の履歴はまだ1回未満です。';
+    const cf50=plan.counterfactual50==null?'—':plan.counterfactual50;
+    const cf30=plan.counterfactual30==null?'—':plan.counterfactual30;
+    return '<div class="pd-alpha-plan-wrap">'+
+      '<div class="pd-alpha-plan-hero"><div><span>直近実基準を使ったシミュレーション</span><h3>'+esc(alphaRouteText(plan))+'</h3></div><div class="pd-alpha-plan-gap"><small>今回との差</small><b>'+plan.gap+'点</b></div></div>'+
+      '<div class="pd-alpha-plan-kpis">'+
+        metric('今回4科',plan.current+'点','実得点')+
+        metric('実α1基準',plan.latestCutoff+'点','今回の実値')+
+        metric('目標余裕',plan.margin+'点','任意設定')+
+        metric('シナリオ目標',plan.scenarioTarget+'点','基準＋余裕')+
+      '</div>'+
+      '<div class="pd-alpha-plan-cols"><div><h4>差をどこから埋めるか</h4>'+routeRows+'<div class="pd-alpha-counter"><span>50%以上の失点を全回収した場合</span><b>'+cf50+'点</b><span>さらに30〜50%も全回収</span><b>'+cf30+'点</b></div></div>'+
+      '<div><h4>科目別の現在地</h4><div class="pd-alpha-subjects">'+subjectRows+'</div></div></div>'+
+      '<div class="pd-alpha-process-list"><h4>次回テストのプロセス目標</h4>'+process+'</div>'+
+      '<div class="pd-alpha-history-note">'+esc(history)+'。これは次回基準の予測ではありません。テスト難度・校舎・時期で基準は変わります。</div>'+
+      '</div>';
+  }
+
   function lifecycleLabel(status) {
     return status==='graduated'?'卒業':status==='improving'?'改善中':status==='active'?'継続中':'判定保留';
   }
@@ -358,6 +419,7 @@
       '<div class="pd-alpha-form">'+
         '<label>現在クラス<input id="pdAlphaCurrentClass" type="text" value="'+esc(g.currentClass||'')+'" placeholder="例：H"></label>'+
         '<label>このテストのα1基準点<input id="pdAlphaCutoff" type="number" min="0" step="1" value="'+esc(cutoff)+'" placeholder="実際の基準点"></label>'+
+        '<label>目標余裕点<input id="pdAlphaMargin" type="number" min="0" max="50" step="1" value="'+esc(g.margin||0)+'" placeholder="0"></label>'+
         '<button class="btn primary small" id="pdSaveAlpha">α1目標を更新</button>'+
       '</div>'+
       '<div class="pd-alpha-note">'+esc(latest.name||'')+' '+esc(latest.date||'')+'を基準に表示。基準点未確認時は推測値を使いません。</div>'+
@@ -458,6 +520,7 @@
     const longitudinal = longitudinalReport(ds);
     const recovery = recoveryReport(ds);
     const alpha = alphaReport(ds);
+    const alphaPlan = alphaPlanReport(ds,recovery,longitudinal);
     const latestTests = ds.tests.slice().sort(function(a,b){ return String(b.date).localeCompare(String(a.date)); }).slice(0,5);
     if (window.RecoveryEngine) saveDash(ds);
 
@@ -523,15 +586,16 @@
       '<section class="pd-grid"><article class="pd-panel"><div class="pd-panel-head"><div><span>03</span><h3>弱点タグ</h3></div><small>誤答・ヒント・△を反映</small></div>'+weakHtml+'</article>'+
       '<article class="pd-panel pd-span-2"><div class="pd-panel-head"><div><span>04</span><h3>A〜G 誤答原因</h3></div><small>原因を直してから問題数を増やす</small></div><div class="pd-errors">'+errHtml+'</div></article></section>'+
       '<section class="pd-panel pd-alpha"><div class="pd-panel-head"><div><span>05</span><h3>SAPIX α1入室目標</h3></div><small>基準点は実値のみ使用</small></div>'+alphaGoalHtml(alpha,ds.alphaGoal,sapix)+'</section>'+
-      '<section class="pd-panel pd-recovery" id="pdRecoveryPanel"><div class="pd-panel-head"><div><span>06</span><h3>弱点卒業トラッカー</h3></div><small>発見→再テスト→卒業</small></div>'+recoveryHtml(recovery)+'</section>'+
-      '<section class="pd-panel pd-longitudinal"><div class="pd-panel-head"><div><span>07</span><h3>継続弱点｜直近5回</h3></div><small>再発頻度から今週の重点を最大2つに絞る</small></div>'+longitudinalHtml(longitudinal)+'</section>'+
-      '<section class="pd-panel pd-sapix" id="pdSapixPanel"><div class="pd-panel-head"><div><span>08</span><h3>SAPIXテスト自動分析</h3></div><small>PDFは端末内で解析・生データは保存しない</small></div>'+
+      '<section class="pd-panel pd-alpha-plan"><div class="pd-panel-head"><div><span>06</span><h3>α1 次回得点設計</h3></div><small>難問より先に取りこぼしを回収</small></div>'+alphaPlanHtml(alphaPlan)+'</section>'+
+      '<section class="pd-panel pd-recovery" id="pdRecoveryPanel"><div class="pd-panel-head"><div><span>07</span><h3>弱点卒業トラッカー</h3></div><small>発見→再テスト→卒業</small></div>'+recoveryHtml(recovery)+'</section>'+
+      '<section class="pd-panel pd-longitudinal"><div class="pd-panel-head"><div><span>08</span><h3>継続弱点｜直近5回</h3></div><small>再発頻度から今週の重点を最大2つに絞る</small></div>'+longitudinalHtml(longitudinal)+'</section>'+
+      '<section class="pd-panel pd-sapix" id="pdSapixPanel"><div class="pd-panel-head"><div><span>09</span><h3>SAPIXテスト自動分析</h3></div><small>PDFは端末内で解析・生データは保存しない</small></div>'+
         '<div class="pd-sapix-import"><input type="file" id="pdSapixPdf" accept=".pdf,application/pdf" hidden><button class="btn primary" id="pdSapixPick">SAPIX成績票PDFを解析</button><span id="pdSapixStatus">PDF.jsは解析時だけ読み込みます。</span><details><summary>PDFが読めない場合：テキスト貼り付け</summary><textarea id="pdSapixText" rows="5" placeholder="PDFから抽出したテキストを貼り付け"></textarea><button class="btn ghost small" id="pdSapixAnalyzeText">貼り付け内容を解析</button></details></div>'+
         sapixAnalysisHtml(sapix)+'</section>'+
-      '<section class="pd-panel pd-tests"><div class="pd-panel-head"><div><span>09</span><h3>SAPIXテスト履歴</h3></div><small>PDF取込＋必要時のみ手入力</small></div>'+
+      '<section class="pd-panel pd-tests"><div class="pd-panel-head"><div><span>10</span><h3>SAPIXテスト履歴</h3></div><small>PDF取込＋必要時のみ手入力</small></div>'+
         '<div class="pd-test-form"><input type="date" id="pdTestDate"><input type="text" id="pdTestName" placeholder="例：9月度マンスリー"><input type="number" step="0.1" id="pdDev4" placeholder="4科偏差値"><input type="number" step="0.1" id="pdMath" placeholder="算数"><input type="number" step="0.1" id="pdJp" placeholder="国語"><button class="btn primary small" id="pdSaveTest">手入力</button></div>'+
         '<div class="pd-test-list">'+testsHtml+'</div></section>'+
-      '<section class="pd-panel pd-focus"><div class="pd-panel-head"><div><span>10</span><h3>今週直すこと</h3></div><small>最大2項目まで</small></div><textarea id="pdWeeklyFocus" rows="3" placeholder="例：式を書く前に図か表を1回作る。">'+esc(ds.weeklyFocus)+'</textarea><div class="pd-focus-actions"><span>端末内だけに保存します。</span><button class="btn ghost small" id="pdSaveFocus">保存</button></div></section>';
+      '<section class="pd-panel pd-focus"><div class="pd-panel-head"><div><span>11</span><h3>今週直すこと</h3></div><small>最大2項目まで</small></div><textarea id="pdWeeklyFocus" rows="3" placeholder="例：式を書く前に図か表を1回作る。">'+esc(ds.weeklyFocus)+'</textarea><div class="pd-focus-actions"><span>端末内だけに保存します。</span><button class="btn ghost small" id="pdSaveFocus">保存</button></div></section>';
 
     bindDashboard();
   }
@@ -586,8 +650,10 @@
     if(saveAlpha) saveAlpha.onclick=function() {
       const ds=dashState();
       const latest=latestSapix(ds);
-      ds.alphaGoal=ds.alphaGoal||{enabled:true,label:'SAPIX α1入室',currentClass:'',cutoffs:{}};
+      ds.alphaGoal=ds.alphaGoal||{enabled:true,label:'SAPIX α1入室',currentClass:'',margin:0,cutoffs:{}};
       ds.alphaGoal.currentClass=(document.getElementById('pdAlphaCurrentClass')||{}).value||'';
+      const marginRaw=(document.getElementById('pdAlphaMargin')||{}).value;
+      ds.alphaGoal.margin=marginRaw===''?0:Math.max(0,Math.min(50,Number(marginRaw)||0));
       if(latest) {
         const key=analysisKey(latest);
         const raw=(document.getElementById('pdAlphaCutoff')||{}).value;
