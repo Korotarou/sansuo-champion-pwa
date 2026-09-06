@@ -41,6 +41,8 @@ jobs:
           node --check parent-dashboard.js
           node --check longitudinal-engine.js
           node --check recovery-engine.js
+          node --check alpha1-planner.js
+          grep -q 'alpha1-planner.js' index.html
           grep -q 'recovery-engine.js' index.html
           grep -q 'longitudinal-engine.js' index.html
           grep -q 'sapix-analyzer.js' index.html
@@ -143,6 +145,37 @@ jobs:
           const alpha=window.RecoveryEngine.alphaStatus([a],{label:'SAPIX α1入室',cutoffScore:360,currentClass:'H'});
           if(alpha.gap!==10||!alpha.recoverableCoversGap) throw new Error('alpha gap failed');
           console.log('Recovery/alpha1 engine PASS');
+          NODE
+
+      - name: Alpha1 score planner test
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          global.window={};
+          eval(fs.readFileSync('alpha1-planner.js','utf8'));
+          const latest={
+            date:'2026-09-01',name:'SAPIX',
+            summary:{
+              total4:{score:350,max:500,dev:58},
+              math:{score:95,max:150,dev:60},
+              jp:{score:90,max:150,dev:56},
+              science:{score:85,max:100,dev:61},
+              social:{score:80,max:100,dev:55}
+            },
+            metrics:{mustCount:1,mustPoints:5,targetCount:2,targetPoints:10,growthPoints:5}
+          };
+          const goal={cutoffs:{'2026-09-01|SAPIX':360},margin:5};
+          const plan=window.Alpha1Planner.analyze([latest],goal,{due:2},{priorities:[]});
+          if(plan.scenarioTarget!==365) throw new Error('scenario target failed');
+          if(plan.gap!==15) throw new Error('gap failed');
+          if(plan.routeStatus!=='within-50plus') throw new Error('route classification failed');
+          if(plan.counterfactual50!==365) throw new Error('counterfactual failed');
+          if(!plan.processTargets.find(x=>x.area==='算数')) throw new Error('process target failed');
+          const unknown=window.Alpha1Planner.analyze([latest],{cutoffs:{}},{due:0},{priorities:[]});
+          if(unknown.scenarioTarget!==null||unknown.gap!==null) throw new Error('unknown cutoff handling failed');
+          console.log('Alpha1 planner PASS');
           NODE
 
       - name: Verify PWA structure and privacy
