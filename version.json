@@ -1,6 +1,6 @@
 {
-  "version": "2.1.0",
-  "build": "20260906-v03",
+  "version": "2.2.0",
+  "build": "20260906-v04",
   "problem_count": 438,
   "core_problems": 18,
   "generated_problems": 420,
@@ -19,5 +19,17 @@
     "A-G誤答原因",
     "SAPIXテスト記録",
     "週重点"
-  ]
+  ],
+  "sapix_analyzer": true,
+  "sapix_analyzer_features": [
+    "SAPIX個人成績票PDFローカル解析",
+    "総合偏差値自動取込",
+    "算数分野別成績解析",
+    "設問別正答率と失点優先度",
+    "正答率70%以上の取りこぼし抽出",
+    "正答率50〜70%の失点抽出",
+    "A-G誤答原因の手動確定",
+    "弱点に応じた内部問題推薦"
+  ],
+  "pdfjs_version": "6.3.289"
 }
