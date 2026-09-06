@@ -44,7 +44,8 @@
     const saved = loadJson(DASH_KEY, {});
     return {
       tests: Array.isArray(saved.tests) ? saved.tests : [],
-      weeklyFocus: saved.weeklyFocus || ''
+      weeklyFocus: saved.weeklyFocus || '',
+      sapixAnalyses: Array.isArray(saved.sapixAnalyses) ? saved.sapixAnalyses : []
     };
   }
 
@@ -92,6 +93,12 @@
         const v = errors[k];
         if (typeof v === 'number') out[k] += v;
         else if (v) out[k] += 1;
+      });
+    });
+    const ds = dashState();
+    (ds.sapixAnalyses || []).forEach(function(a) {
+      Object.values(a.causes || {}).forEach(function(cause) {
+        if (Object.prototype.hasOwnProperty.call(out, cause)) out[cause] += 1;
       });
     });
     return out;
@@ -150,15 +157,22 @@
     const weak = weakTags(state);
     const weakSet = {};
     weak.slice(0,3).forEach(function(x){ weakSet[x[0]] = x[1]; });
+    const ds = dashState();
+    const latest = (ds.sapixAnalyses || [])[0] || null;
+    const sapixWords = latest && Array.isArray(latest.focusKeywords) ? latest.focusKeywords : [];
     return problemBank().filter(function(p) {
-      const s = state.stats && state.stats[p.id];
-      return !dueIds[p.id] && !isMastered(s);
+      const st = state.stats && state.stats[p.id];
+      return !dueIds[p.id] && !isMastered(st);
     }).map(function(p) {
-      const s = state.stats && state.stats[p.id] ? state.stats[p.id] : {};
-      let score = s.attempts ? 15 : 30;
-      if (s.quality === '△') score += 50;
-      if ((s.hints || 0) > 0) score += 20;
+      const st = state.stats && state.stats[p.id] ? state.stats[p.id] : {};
+      let score = st.attempts ? 15 : 30;
+      if (st.quality === '△') score += 50;
+      if ((st.hints || 0) > 0) score += 20;
       (p.tags || []).forEach(function(t){ score += (weakSet[t] || 0) * 6; });
+      const haystack = [p.title,p.familyName,p.family].concat(p.tags || []).join(' ');
+      sapixWords.forEach(function(word) {
+        if (word && haystack.indexOf(word) >= 0) score += 42;
+      });
       return [p, score];
     }).sort(function(a,b){ return b[1]-a[1]; }).slice(0,limit).map(function(x){ return x[0]; });
   }
@@ -169,6 +183,82 @@
 
   function emptyNote(text) {
     return '<div class="pd-empty">'+esc(text)+'</div>';
+  }
+
+  function latestSapix(ds) {
+    return (ds.sapixAnalyses || [])[0] || null;
+  }
+
+  function analysisKey(a) {
+    return String(a && a.date || '') + '|' + String(a && a.name || '');
+  }
+
+  function saveSapixAnalysis(analysis) {
+    const ds = dashState();
+    const key = analysisKey(analysis);
+    const old = (ds.sapixAnalyses || []).find(function(a){ return analysisKey(a) === key; });
+    if (old && old.causes) analysis.causes = old.causes;
+    ds.sapixAnalyses = (ds.sapixAnalyses || []).filter(function(a){ return analysisKey(a) !== key; });
+    ds.sapixAnalyses.unshift(analysis);
+    ds.sapixAnalyses = ds.sapixAnalyses.slice(0,12);
+
+    const summary = analysis.summary || {};
+    const autoTest = {
+      date:analysis.date || '',
+      name:analysis.name || 'SAPIXテスト',
+      dev4:summary.total4 && summary.total4.dev != null ? summary.total4.dev : '',
+      math:summary.math && summary.math.dev != null ? summary.math.dev : '',
+      jp:summary.jp && summary.jp.dev != null ? summary.jp.dev : '',
+      source:'pdf'
+    };
+    const testKey = String(autoTest.date) + '|' + String(autoTest.name);
+    ds.tests = (ds.tests || []).filter(function(t){ return String(t.date)+'|'+String(t.name) !== testKey; });
+    ds.tests.push(autoTest);
+    saveDash(ds);
+  }
+
+  function causeOptions(selected) {
+    const opts = ['','A','B','C','D','E','F','G'];
+    return opts.map(function(k) {
+      const label = k ? k+' '+ERROR_LABELS[k] : '原因を選ぶ';
+      return '<option value="'+k+'" '+(selected===k?'selected':'')+'>'+esc(label)+'</option>';
+    }).join('');
+  }
+
+  function sapixAnalysisHtml(a) {
+    if (!a) {
+      return '<div class="pd-sapix-empty"><b>PDFを入れると自動分析します。</b><p>総合偏差値、算数の分野別成績、設問ごとの○×・配点・正答率を端末内で読み取り、「取るべき問題」の取りこぼしから優先順位を作ります。</p></div>';
+    }
+    const m = a.metrics || {};
+    const sections = (a.mathSections || []).slice().sort(function(x,y){
+      const xd=(x.scoreRate||0)-(x.avgRate||0), yd=(y.scoreRate||0)-(y.avgRate||0);
+      return xd-yd;
+    });
+    const sectionRows = sections.map(function(x) {
+      const delta = Math.round(((x.scoreRate||0)-(x.avgRate||0))*10)/10;
+      return '<div class="pd-sapix-section"><div><b>'+esc(x.name)+'</b><small>'+x.score+' / '+x.max+'点</small></div><div><span>本人 '+x.scoreRate+'%</span><span>平均 '+x.avgRate+'%</span><b class="'+(delta<0?'neg':'pos')+'">'+(delta>0?'+':'')+delta+'pt</b></div></div>';
+    }).join('') || emptyNote('分野別成績は読み取れませんでした。');
+
+    const important = (a.mathQuestions || []).filter(function(q){ return !q.correct || q.rate < 50; }).slice(0,14);
+    const questionRows = important.map(function(q) {
+      const cause = a.causes && a.causes[q.id] || '';
+      return '<div class="pd-sapix-question '+esc(q.bucket || '')+'"><div class="pd-sq-id">'+esc(q.id)+'</div><div class="pd-sq-mark '+(q.correct?'ok':'ng')+'">'+(q.correct?'○':'×')+'</div><div><b>'+q.points+'点</b><small>正答率 '+q.rate+'%</small></div><div class="pd-sq-label">'+esc(q.bucketLabel || '')+'</div>'+(q.correct?'<span class="pd-sq-win">獲得</span>':'<select class="pd-cause-select" data-pd-cause="'+esc(q.id)+'">'+causeOptions(cause)+'</select>')+'</div>';
+    }).join('') || emptyNote('設問別正答率は読み取れませんでした。');
+
+    const quality = a.parseQuality || {};
+    const qualityOk = quality.summary && quality.sectionsTotal === ((a.summary && a.summary.math && a.summary.math.max) || 150) && quality.questionsTotal === ((a.summary && a.summary.math && a.summary.math.max) || 150);
+    return '<div class="pd-sapix-result">'+
+      '<div class="pd-sapix-title"><div><b>'+esc(a.name || 'SAPIXテスト')+'</b><small>'+esc(a.date || '')+' ・ PDFローカル解析</small></div><span class="pd-parse-badge '+(qualityOk?'ok':'warn')+'">'+(qualityOk?'全項目読取':'一部読取')+'</span></div>'+
+      (a.warning?'<div class="pd-sapix-warning">'+esc(a.warning)+'</div>':'')+
+      '<div class="pd-sapix-kpis">'+
+        metric('70%以上の失点', (m.mustCount||0)+'問 / '+(m.mustPoints||0)+'点', '最優先で再確認')+
+        metric('50〜70%の失点', (m.targetCount||0)+'問 / '+(m.targetPoints||0)+'点', '次に回収')+
+        metric('回収可能点', (m.recoverablePoints||0)+'点', '正答率50%以上の失点')+
+        metric('30%未満を正解', (m.hardWinCount||0)+'問', '難問獲得')+
+      '</div>'+
+      '<div class="pd-sapix-columns"><div><h4>分野別：平均との差</h4>'+sectionRows+'</div><div><h4>設問優先順位</h4><div class="pd-sapix-questions">'+questionRows+'</div></div></div>'+
+      '<div class="pd-sapix-foot"><span>A〜Gは正誤だけでは推定しません。答案を確認して原因を選ぶと、上の誤答原因集計へ反映します。</span><button class="btn ghost small" id="pdDeleteSapix">この解析結果を削除</button></div>'+
+      '</div>';
   }
 
   function renderDashboard() {
@@ -188,6 +278,7 @@
     const week = weekActivity(state);
     const plan = currentPlan(state);
     const rec = recommended(state, 3);
+    const sapix = latestSapix(ds);
     const latestTests = ds.tests.slice().sort(function(a,b){ return String(b.date).localeCompare(String(a.date)); }).slice(0,5);
 
     let actionHtml = '';
@@ -209,14 +300,17 @@
     }).join('');
 
     let testsHtml = latestTests.length ? latestTests.map(function(t, idx) {
-      return '<div class="pd-test-row"><div><b>'+esc(t.name || 'テスト')+'</b><small>'+esc(t.date || '')+'</small></div><div><span>4科 '+esc(t.dev4 || '—')+'</span><span>算 '+esc(t.math || '—')+'</span><span>国 '+esc(t.jp || '—')+'</span></div><button class="pd-delete" data-pd-delete-test="'+idx+'" aria-label="削除">×</button></div>';
-    }).join('') : emptyNote('SAPIXテストを登録すると、ここに推移を残せます。PDF自動取込は次段階で接続します。');
+      return '<div class="pd-test-row"><div><b>'+esc(t.name || 'テスト')+'</b><small>'+esc(t.date || '')+(t.source==='pdf'?' ・ PDF取込':'')+'</small></div><div><span>4科 '+esc(t.dev4 || '—')+'</span><span>算 '+esc(t.math || '—')+'</span><span>国 '+esc(t.jp || '—')+'</span></div><button class="pd-delete" data-pd-delete-test="'+idx+'" aria-label="削除">×</button></div>';
+    }).join('') : emptyNote('SAPIXテストPDFを取り込むか、手入力すると推移を残せます。');
 
-    const priority = due.length > 0
-      ? '今日の最優先は再テスト '+due.length+'問。新問より先に、ヒントなしで再現できるか確認する。'
-      : triangle > 0
-        ? '△問題が '+triangle+'問あります。新しい難問を増やす前に、説明できる状態まで戻す。'
-        : '再テスト期限はありません。今週テーマに沿って新問を進める。';
+    const sapixMetrics = sapix && sapix.metrics || {};
+    const priority = sapix && (sapixMetrics.mustCount || 0) > 0
+      ? 'SAPIXで正答率70%以上の取りこぼしが '+sapixMetrics.mustCount+'問・'+sapixMetrics.mustPoints+'点。まず元答案で原因を特定して解き直す。'
+      : due.length > 0
+        ? '今日の最優先は再テスト '+due.length+'問。新問より先に、ヒントなしで再現できるか確認する。'
+        : triangle > 0
+          ? '△問題が '+triangle+'問あります。新しい難問を増やす前に、説明できる状態まで戻す。'
+          : '再テスト期限はありません。今週テーマに沿って新問を進める。';
 
     main.innerHTML =
       '<header class="page-head pd-head"><div><div class="pd-eyebrow">PARENT DASHBOARD</div><h1 class="page-title">学習改善ダッシュボード</h1><div class="page-sub">成績を見る画面ではなく、次に何を直すかを決める画面です。</div></div><div class="page-actions"><button class="btn ghost" id="pdGoReview">復習一覧</button><button class="btn primary" id="pdGoChallenge">問題に挑戦</button></div></header>'+
@@ -231,10 +325,13 @@
       '<article class="pd-panel"><div class="pd-panel-head"><div><span>02</span><h3>今週の実績</h3></div><small>自力時間を優先</small></div><div class="pd-week-stats"><div><b>'+week.newCount+'</b><span>新問</span></div><div><b>'+week.reviews+'</b><span>再テスト</span></div><div><b>'+week.explains+'</b><span>説明</span></div><div><b>'+week.minutes+'</b><span>分</span></div></div></article></section>'+
       '<section class="pd-grid"><article class="pd-panel"><div class="pd-panel-head"><div><span>03</span><h3>弱点タグ</h3></div><small>誤答・ヒント・△を反映</small></div>'+weakHtml+'</article>'+
       '<article class="pd-panel pd-span-2"><div class="pd-panel-head"><div><span>04</span><h3>A〜G 誤答原因</h3></div><small>原因を直してから問題数を増やす</small></div><div class="pd-errors">'+errHtml+'</div></article></section>'+
-      '<section class="pd-panel pd-tests"><div class="pd-panel-head"><div><span>05</span><h3>SAPIXテスト記録</h3></div><small>まず手入力。PDF自動取込へ拡張</small></div>'+
-        '<div class="pd-test-form"><input type="date" id="pdTestDate"><input type="text" id="pdTestName" placeholder="例：9月度マンスリー"><input type="number" step="0.1" id="pdDev4" placeholder="4科偏差値"><input type="number" step="0.1" id="pdMath" placeholder="算数"><input type="number" step="0.1" id="pdJp" placeholder="国語"><button class="btn primary small" id="pdSaveTest">登録</button></div>'+
+      '<section class="pd-panel pd-sapix" id="pdSapixPanel"><div class="pd-panel-head"><div><span>05</span><h3>SAPIXテスト自動分析</h3></div><small>PDFは端末内で解析・生データは保存しない</small></div>'+
+        '<div class="pd-sapix-import"><input type="file" id="pdSapixPdf" accept=".pdf,application/pdf" hidden><button class="btn primary" id="pdSapixPick">SAPIX成績票PDFを解析</button><span id="pdSapixStatus">PDF.jsは解析時だけ読み込みます。</span><details><summary>PDFが読めない場合：テキスト貼り付け</summary><textarea id="pdSapixText" rows="5" placeholder="PDFから抽出したテキストを貼り付け"></textarea><button class="btn ghost small" id="pdSapixAnalyzeText">貼り付け内容を解析</button></details></div>'+
+        sapixAnalysisHtml(sapix)+'</section>'+
+      '<section class="pd-panel pd-tests"><div class="pd-panel-head"><div><span>06</span><h3>SAPIXテスト履歴</h3></div><small>PDF取込＋必要時のみ手入力</small></div>'+
+        '<div class="pd-test-form"><input type="date" id="pdTestDate"><input type="text" id="pdTestName" placeholder="例：9月度マンスリー"><input type="number" step="0.1" id="pdDev4" placeholder="4科偏差値"><input type="number" step="0.1" id="pdMath" placeholder="算数"><input type="number" step="0.1" id="pdJp" placeholder="国語"><button class="btn primary small" id="pdSaveTest">手入力</button></div>'+
         '<div class="pd-test-list">'+testsHtml+'</div></section>'+
-      '<section class="pd-panel pd-focus"><div class="pd-panel-head"><div><span>06</span><h3>今週直すこと</h3></div><small>最大2項目まで</small></div><textarea id="pdWeeklyFocus" rows="3" placeholder="例：式を書く前に図か表を1回作る。">'+esc(ds.weeklyFocus)+'</textarea><div class="pd-focus-actions"><span>端末内だけに保存します。</span><button class="btn ghost small" id="pdSaveFocus">保存</button></div></section>';
+      '<section class="pd-panel pd-focus"><div class="pd-panel-head"><div><span>07</span><h3>今週直すこと</h3></div><small>最大2項目まで</small></div><textarea id="pdWeeklyFocus" rows="3" placeholder="例：式を書く前に図か表を1回作る。">'+esc(ds.weeklyFocus)+'</textarea><div class="pd-focus-actions"><span>端末内だけに保存します。</span><button class="btn ghost small" id="pdSaveFocus">保存</button></div></section>';
 
     bindDashboard();
   }
@@ -256,6 +353,71 @@
     const challenge = document.getElementById('pdGoChallenge');
     if (review) review.onclick = function(){ setCoreRoute('review'); };
     if (challenge) challenge.onclick = function(){ setCoreRoute('challenge'); };
+
+    const pickPdf = document.getElementById('pdSapixPick');
+    const pdfInput = document.getElementById('pdSapixPdf');
+    const sapixStatus = document.getElementById('pdSapixStatus');
+    if (pickPdf && pdfInput) pickPdf.onclick = function(){ pdfInput.click(); };
+    if (pdfInput) pdfInput.onchange = async function() {
+      const file = pdfInput.files && pdfInput.files[0];
+      if (!file) return;
+      if (!window.SapixAnalyzer) {
+        if (sapixStatus) sapixStatus.textContent = '解析エンジンを読み込めません。';
+        return;
+      }
+      pickPdf.disabled = true;
+      try {
+        const analysis = await window.SapixAnalyzer.analyzePdf(file, function(msg){
+          if (sapixStatus) sapixStatus.textContent = msg;
+        });
+        saveSapixAnalysis(analysis);
+        renderDashboard();
+        const status2 = document.getElementById('pdSapixStatus');
+        if (status2) status2.textContent = '解析完了：個人名・受験番号・PDF本文は保存していません。';
+      } catch (e) {
+        if (sapixStatus) sapixStatus.textContent = '解析失敗：'+(e && e.message ? e.message : String(e));
+      } finally {
+        pickPdf.disabled = false;
+        pdfInput.value = '';
+      }
+    };
+
+    const analyzeText = document.getElementById('pdSapixAnalyzeText');
+    if (analyzeText) analyzeText.onclick = function() {
+      const box = document.getElementById('pdSapixText');
+      const raw = box ? box.value : '';
+      if (!raw.trim()) { if (box) box.focus(); return; }
+      try {
+        const analysis = window.SapixAnalyzer.analyzeText(raw, 'pasted-text');
+        saveSapixAnalysis(analysis);
+        renderDashboard();
+      } catch (e) {
+        if (sapixStatus) sapixStatus.textContent = '解析失敗：'+(e && e.message ? e.message : String(e));
+      }
+    };
+
+    document.querySelectorAll('[data-pd-cause]').forEach(function(sel) {
+      sel.onchange = function() {
+        const ds = dashState();
+        const a = latestSapix(ds);
+        if (!a) return;
+        a.causes = a.causes || {};
+        const id = sel.getAttribute('data-pd-cause');
+        if (sel.value) a.causes[id] = sel.value; else delete a.causes[id];
+        saveDash(ds);
+        renderDashboard();
+      };
+    });
+
+    const deleteSapix = document.getElementById('pdDeleteSapix');
+    if (deleteSapix) deleteSapix.onclick = function() {
+      const ds = dashState();
+      const a = latestSapix(ds);
+      if (!a) return;
+      ds.sapixAnalyses = (ds.sapixAnalyses || []).slice(1);
+      saveDash(ds);
+      renderDashboard();
+    };
 
     const date = document.getElementById('pdTestDate');
     if (date && !date.value) date.value = new Date().toISOString().slice(0,10);
