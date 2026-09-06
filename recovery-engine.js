@@ -75,32 +75,44 @@
     });
   }
 
-  function validPasses(rec) {
-    return (rec.attempts||[]).filter(a=>a.result==='pass'&&a.noHint&&a.explained).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
-  }
-
   function normalize(rec) {
     rec.attempts=Array.isArray(rec.attempts)?rec.attempts:[];
-    const passes=validPasses(rec);
-    let graduated=false;
-    if(passes.length>=2) {
-      for(let i=1;i<passes.length;i++) {
-        const a=parseDay(passes[i-1].date), b=parseDay(passes[i].date);
-        if(a&&b&&(b-a)>=3*DAY) { graduated=true; break; }
+    const ordered=rec.attempts.slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.at||'').localeCompare(String(b.at||'')));
+    let anchorPass=null;
+    let lastValidPass=null;
+    let graduatedAt=null;
+    for (const a of ordered) {
+      if (a.result==='fail') {
+        anchorPass=null;
+        lastValidPass=null;
+        continue;
+      }
+      if (!(a.result==='pass'&&a.noHint&&a.explained)) continue;
+      const d=parseDay(a.date);
+      if (!d) continue;
+      lastValidPass=a;
+      if (!anchorPass) {
+        anchorPass=a;
+        continue;
+      }
+      const first=parseDay(anchorPass.date);
+      if (first && (d-first)>=3*DAY) {
+        graduatedAt=a.date;
+        break;
       }
     }
-    if(graduated) {
+    if(graduatedAt) {
       rec.status='graduated';
-      rec.graduatedAt=passes[passes.length-1].date;
+      rec.graduatedAt=graduatedAt;
       rec.nextReview=null;
-    } else if(passes.length) {
+    } else if(anchorPass && lastValidPass) {
       rec.status='strengthening';
       rec.graduatedAt=null;
-      rec.nextReview=addDays(passes[passes.length-1].date,3);
+      rec.nextReview=addDays(anchorPass.date,3);
     } else {
       rec.status='unresolved';
       rec.graduatedAt=null;
-      const last=(rec.attempts||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).pop();
+      const last=ordered[ordered.length-1];
       rec.nextReview=last?addDays(last.date,1):(rec.nextReview||dateOnly());
     }
     return rec;
