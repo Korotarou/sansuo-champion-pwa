@@ -39,6 +39,8 @@ jobs:
           node --check problems.js
           node --check sapix-analyzer.js
           node --check parent-dashboard.js
+          node --check longitudinal-engine.js
+          grep -q 'longitudinal-engine.js' index.html
           grep -q 'sapix-analyzer.js' index.html
           grep -q 'parent-dashboard.js' index.html
 
@@ -77,6 +79,40 @@ jobs:
           if (a.parseQuality.sectionsTotal !== 150) throw new Error('section parse failed');
           if (a.parseQuality.questionsTotal !== 150 || a.parseQuality.questionCount !== 30) throw new Error('question parse failed');
           console.log('SAPIX parser fixture PASS');
+          NODE
+
+      - name: Longitudinal weakness engine test
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          global.window={};
+          eval(fs.readFileSync('longitudinal-engine.js','utf8'));
+          const mk=(date,cause,domain,dev,must,recover)=>({
+            date,
+            causes:cause?{'1-(1)':cause}:{},
+            metrics:{mustCount:must,mustPoints:must*5,recoverablePoints:recover},
+            summary:{math:{dev}},
+            mathSections:[
+              {name:domain,scoreRate:50,avgRate:67},
+              {name:'立体図形',scoreRate:80,avgRate:65}
+            ]
+          });
+          const data=[
+            mk('2026-09-01','F','平面図形',58,1,10),
+            mk('2026-08-20','F','平面図形',55,2,20),
+            mk('2026-08-01','C','場合の数',54,1,15),
+            mk('2026-07-15','F','平面図形',52,1,20),
+            mk('2026-06-20','E','計算',50,0,5)
+          ];
+          const r=window.LongitudinalAnalyzer.analyze(data,5);
+          if(r.window!==5) throw new Error('window failed');
+          if(!r.causes.find(x=>x.code==='F'&&x.tests===3)) throw new Error('cause recurrence failed');
+          if(!r.domains.find(x=>x.domain==='平面図形'&&x.tests===3)) throw new Error('domain recurrence failed');
+          if(r.priorities.length<2) throw new Error('priority selection failed');
+          if(!r.recommendationKeywords.includes('平面図形')) throw new Error('recommendation keywords failed');
+          console.log('Longitudinal engine PASS');
           NODE
 
       - name: Verify PWA structure and privacy
