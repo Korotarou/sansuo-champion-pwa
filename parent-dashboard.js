@@ -42,10 +42,18 @@
 
   function dashState() {
     const saved = loadJson(DASH_KEY, {});
+    const alphaGoal = saved.alphaGoal && typeof saved.alphaGoal==='object' ? saved.alphaGoal : {};
     return {
       tests: Array.isArray(saved.tests) ? saved.tests : [],
       weeklyFocus: saved.weeklyFocus || '',
-      sapixAnalyses: Array.isArray(saved.sapixAnalyses) ? saved.sapixAnalyses : []
+      sapixAnalyses: Array.isArray(saved.sapixAnalyses) ? saved.sapixAnalyses : [],
+      recoveryRecords: Array.isArray(saved.recoveryRecords) ? saved.recoveryRecords : [],
+      alphaGoal: {
+        enabled: alphaGoal.enabled !== false,
+        label: alphaGoal.label || 'SAPIX α1入室',
+        currentClass: alphaGoal.currentClass || '',
+        cutoffs: alphaGoal.cutoffs && typeof alphaGoal.cutoffs==='object' ? alphaGoal.cutoffs : {}
+      }
     };
   }
 
@@ -247,6 +255,115 @@
       '</div>';
   }
 
+  function recoveryReport(ds) {
+    if (!window.RecoveryEngine) return {records:[],summary:null,causeLifecycle:[],domainLifecycle:[]};
+    ds.recoveryRecords = window.RecoveryEngine.sync(ds.sapixAnalyses || [], ds.recoveryRecords || []);
+    return {
+      records: ds.recoveryRecords,
+      summary: window.RecoveryEngine.summary(ds.recoveryRecords),
+      causeLifecycle: window.RecoveryEngine.causeLifecycle(ds.sapixAnalyses || [],5),
+      domainLifecycle: window.RecoveryEngine.domainLifecycle(ds.sapixAnalyses || [],5)
+    };
+  }
+
+  function alphaReport(ds) {
+    if (!window.RecoveryEngine) return null;
+    const latest = latestSapix(ds);
+    const goal = ds.alphaGoal || {label:'SAPIX α1入室',cutoffs:{}};
+    const cutoff = latest ? (goal.cutoffs || {})[analysisKey(latest)] : '';
+    return window.RecoveryEngine.alphaStatus(ds.sapixAnalyses || [], {
+      enabled:goal.enabled,
+      label:goal.label,
+      currentClass:goal.currentClass,
+      cutoffScore:cutoff
+    });
+  }
+
+  function lifecycleLabel(status) {
+    return status==='graduated'?'卒業':status==='improving'?'改善中':status==='active'?'継続中':'判定保留';
+  }
+
+  function lifecycleClass(status) {
+    return status==='graduated'?'graduated':status==='improving'?'improving':status==='active'?'active':'';
+  }
+
+  function recoveryHtml(report) {
+    const sum=report&&report.summary;
+    if (!sum || sum.total===0) {
+      return '<div class="pd-recovery-empty"><b>正答率50%以上の失点を取り込むと、ここで再テストを追跡します。</b><p>1回解けただけでは卒業にしません。別日に再現できるかを確認します。</p></div>';
+    }
+    const today=window.RecoveryEngine?window.RecoveryEngine.dateOnly():'';
+    const active=(report.records||[]).filter(function(r){return r.status!=='graduated';}).slice(0,10);
+    const rows=active.map(function(r) {
+      const due=!r.nextReview||r.nextReview<=today;
+      const status=r.status==='strengthening'?'1回目合格':'未定着';
+      const attempts=(r.attempts||[]).length;
+      return '<div class="pd-recovery-row '+(due?'due':'')+'">'+
+        '<div><b>'+esc(r.testName)+' '+esc(r.questionId)+'</b><small>'+esc(r.testDate)+' ・ '+r.points+'点 ・ 正答率 '+r.correctRate+'%'+(r.cause?' ・ '+esc(r.cause+' '+ERROR_LABELS[r.cause]):'')+'</small></div>'+
+        '<div class="pd-recovery-state"><span>'+status+'</span><small>'+(r.nextReview?'次回 '+esc(r.nextReview):'')+' ・ 記録'+attempts+'回</small></div>'+
+        '<div class="pd-recovery-actions">'+
+          '<button class="btn small primary" data-recovery-pass="'+esc(r.id)+'" '+(due?'':'disabled')+'>自力○＋説明○</button>'+
+          '<button class="btn small ghost" data-recovery-fail="'+esc(r.id)+'" '+(due?'':'disabled')+'>×</button>'+
+        '</div></div>';
+    }).join('') || emptyNote('現在、未卒業の再テストはありません。');
+
+    const graduates=(sum.recentGraduates||[]).map(function(r){
+      return '<div class="pd-graduate-chip"><b>'+esc(r.questionId)+'</b><span>'+esc(r.testName)+'</span><small>'+esc(r.graduatedAt||'')+' 卒業</small></div>';
+    }).join('');
+
+    const causeLife=(report.causeLifecycle||[]).filter(function(x){return x.total>=2;}).map(function(x){
+      return '<span class="pd-life-chip '+lifecycleClass(x.status)+'">'+esc(x.code+' '+ERROR_LABELS[x.code])+'：'+lifecycleLabel(x.status)+'</span>';
+    }).join('');
+    const domainLife=(report.domainLifecycle||[]).filter(function(x){return x.tests>=2;}).slice(0,5).map(function(x){
+      return '<span class="pd-life-chip '+lifecycleClass(x.status)+'">'+esc(x.domain)+'：'+lifecycleLabel(x.status)+'</span>';
+    }).join('');
+
+    return '<div class="pd-recovery-wrap">'+
+      '<div class="pd-recovery-kpis">'+
+        metric('再テスト期限',sum.due+'問','今日やる対象')+
+        metric('未定着',sum.unresolved+'問','まだ自力再現なし')+
+        metric('定着途中',sum.strengthening+'問','1回目は合格')+
+        metric('卒業',sum.graduated+'問 / '+sum.graduatedPoints+'点','別日に2回再現')+
+      '</div>'+
+      '<div class="pd-recovery-rule"><b>卒業条件</b><span>ヒントなしで正解し、自分の言葉で説明できる → 3日以上空けてもう一度同条件で正解。途中で失敗した場合は連続確認をやり直します。</span></div>'+
+      '<div class="pd-recovery-list">'+rows+'</div>'+
+      (graduates?'<div class="pd-graduates"><h4>最近卒業した問題</h4>'+graduates+'</div>':'')+
+      '<div class="pd-lifecycle"><div><h4>A〜Gの弱点状態</h4>'+(causeLife||'<span class="pd-life-note">2回以上の再発で判定します。</span>')+'</div><div><h4>分野の弱点状態</h4>'+(domainLife||'<span class="pd-life-note">2回以上の再発で判定します。</span>')+'</div></div>'+
+      '</div>';
+  }
+
+  function alphaGoalHtml(report,goal,latest) {
+    const g=goal||{label:'SAPIX α1入室',currentClass:'',cutoffs:{}};
+    const testKey=latest?analysisKey(latest):'';
+    const cutoff=latest?(g.cutoffs||{})[testKey]||'':'';
+    if(!latest) {
+      return '<div class="pd-alpha-empty"><b>中期目標：SAPIX α1入室</b><p>SAPIXテストPDFを取り込むと、実得点と実際のα1基準点との差を追跡します。</p></div>';
+    }
+    let status='';
+    if(report&&report.gap!==null) {
+      if(report.gap===0) status='入力したα1基準点との差は0点です。';
+      else if(report.recoverableCoversGap) status='同じ基準点なら、正答率50%以上で失った'+report.recoverablePoints+'点の回収余地が、現在の差'+report.gap+'点を上回ります。';
+      else status='入力した基準点まであと'+report.gap+'点。正答率50%以上の失点は'+report.recoverablePoints+'点です。';
+    } else {
+      status='α1基準点は校舎・時期・テストで変わるため自動推定しません。実際の基準点が分かったら入力してください。';
+    }
+    return '<div class="pd-alpha-wrap">'+
+      '<div class="pd-alpha-main"><div class="pd-alpha-mark">α1</div><div><span>中期目標</span><h3>'+esc(g.label||'SAPIX α1入室')+'</h3><p>'+esc(status)+'</p></div></div>'+
+      '<div class="pd-alpha-stats">'+
+        '<div><span>今回4科得点</span><b>'+esc(report&&report.ownScore!=null?report.ownScore:'—')+(report&&report.maxScore?' / '+report.maxScore:'')+'</b></div>'+
+        '<div><span>実際のα1基準</span><b>'+esc(report&&report.cutoffScore!=null?report.cutoffScore:'未入力')+'</b></div>'+
+        '<div><span>基準との差</span><b>'+esc(report&&report.gap!=null?report.gap+'点':'—')+'</b></div>'+
+        '<div><span>回収可能点</span><b>'+esc(report?report.recoverablePoints+'点':'—')+'</b></div>'+
+      '</div>'+
+      '<div class="pd-alpha-form">'+
+        '<label>現在クラス<input id="pdAlphaCurrentClass" type="text" value="'+esc(g.currentClass||'')+'" placeholder="例：H"></label>'+
+        '<label>このテストのα1基準点<input id="pdAlphaCutoff" type="number" min="0" step="1" value="'+esc(cutoff)+'" placeholder="実際の基準点"></label>'+
+        '<button class="btn primary small" id="pdSaveAlpha">α1目標を更新</button>'+
+      '</div>'+
+      '<div class="pd-alpha-note">'+esc(latest.name||'')+' '+esc(latest.date||'')+'を基準に表示。基準点未確認時は推測値を使いません。</div>'+
+      '</div>';
+  }
+
   function analysisKey(a) {
     return String(a && a.date || '') + '|' + String(a && a.name || '');
   }
@@ -272,6 +389,7 @@
     const testKey = String(autoTest.date) + '|' + String(autoTest.name);
     ds.tests = (ds.tests || []).filter(function(t){ return String(t.date)+'|'+String(t.name) !== testKey; });
     ds.tests.push(autoTest);
+    if (window.RecoveryEngine) ds.recoveryRecords = window.RecoveryEngine.sync(ds.sapixAnalyses || [], ds.recoveryRecords || []);
     saveDash(ds);
   }
 
@@ -338,14 +456,28 @@
     const rec = recommended(state, 3);
     const sapix = latestSapix(ds);
     const longitudinal = longitudinalReport(ds);
+    const recovery = recoveryReport(ds);
+    const alpha = alphaReport(ds);
     const latestTests = ds.tests.slice().sort(function(a,b){ return String(b.date).localeCompare(String(a.date)); }).slice(0,5);
+    if (window.RecoveryEngine) saveDash(ds);
 
     let actionHtml = '';
-    due.slice(0,3).forEach(function(p, i) {
-      actionHtml += '<button class="pd-action-row" data-pd-problem="'+esc(p.id)+'"><span class="pd-action-num">'+(i+1)+'</span><span><b>再テスト：'+esc(p.title)+'</b><small>期限到来。ヒントなしで再現できるか確認</small></span><span>開く →</span></button>';
+    let actionIndex=1;
+    const sapixDue=recovery&&recovery.summary?recovery.summary.dueRecords.slice(0,3):[];
+    sapixDue.forEach(function(r) {
+      if(actionIndex>3) return;
+      actionHtml += '<button class="pd-action-row" data-pd-scroll-recovery="1"><span class="pd-action-num">'+actionIndex+'</span><span><b>SAPIX再テスト：'+esc(r.questionId)+'</b><small>'+esc(r.testName)+' ・ '+r.points+'点 ・ 正答率 '+r.correctRate+'%</small></span><span>記録 →</span></button>';
+      actionIndex++;
     });
-    rec.slice(0, Math.max(0, 3-Math.min(3,due.length))).forEach(function(p, i) {
-      actionHtml += '<button class="pd-action-row" data-pd-problem="'+esc(p.id)+'"><span class="pd-action-num">'+(due.length+i+1)+'</span><span><b>重点問題：'+esc(p.title)+'</b><small>'+esc((p.tags || []).slice(0,3).join('・'))+'</small></span><span>開く →</span></button>';
+    due.slice(0,3).forEach(function(p) {
+      if(actionIndex>3) return;
+      actionHtml += '<button class="pd-action-row" data-pd-problem="'+esc(p.id)+'"><span class="pd-action-num">'+actionIndex+'</span><span><b>再テスト：'+esc(p.title)+'</b><small>期限到来。ヒントなしで再現できるか確認</small></span><span>開く →</span></button>';
+      actionIndex++;
+    });
+    rec.slice(0,3).forEach(function(p) {
+      if(actionIndex>3) return;
+      actionHtml += '<button class="pd-action-row" data-pd-problem="'+esc(p.id)+'"><span class="pd-action-num">'+actionIndex+'</span><span><b>重点問題：'+esc(p.title)+'</b><small>'+esc((p.tags || []).slice(0,3).join('・'))+'</small></span><span>開く →</span></button>';
+      actionIndex++;
     });
     if (!actionHtml) actionHtml = emptyNote('現在、期限到来の再テストはありません。新問は通常の「問題に挑戦」から進めます。');
 
@@ -364,15 +496,18 @@
 
     const sapixMetrics = sapix && sapix.metrics || {};
     const longTop = longitudinal && longitudinal.priorities && longitudinal.priorities[0];
-    const priority = longTop
-      ? '継続弱点：'+longTop.title+'。'+longTop.action
-      : sapix && (sapixMetrics.mustCount || 0) > 0
-        ? 'SAPIXで正答率70%以上の取りこぼしが '+sapixMetrics.mustCount+'問・'+sapixMetrics.mustPoints+'点。まず元答案で原因を特定して解き直す。'
-        : due.length > 0
-          ? '今日の最優先は再テスト '+due.length+'問。新問より先に、ヒントなしで再現できるか確認する。'
-          : triangle > 0
-            ? '△問題が '+triangle+'問あります。新しい難問を増やす前に、説明できる状態まで戻す。'
-            : '再テスト期限はありません。今週テーマに沿って新問を進める。';
+    const sapixDueCount = recovery && recovery.summary ? recovery.summary.due : 0;
+    const priority = sapixDueCount>0
+      ? 'SAPIXの再テスト期限が'+sapixDueCount+'問。α1を目指すため、新しい難問より先に「取るべき問題」を自力で再現できる状態へ戻す。'
+      : longTop
+        ? '継続弱点：'+longTop.title+'。'+longTop.action
+        : sapix && (sapixMetrics.mustCount || 0) > 0
+          ? 'SAPIXで正答率70%以上の取りこぼしが '+sapixMetrics.mustCount+'問・'+sapixMetrics.mustPoints+'点。まず元答案で原因を特定して解き直す。'
+          : due.length > 0
+            ? '今日の最優先は再テスト '+due.length+'問。新問より先に、ヒントなしで再現できるか確認する。'
+            : triangle > 0
+              ? '△問題が '+triangle+'問あります。新しい難問を増やす前に、説明できる状態まで戻す。'
+              : '再テスト期限はありません。今週テーマに沿って新問を進める。';
 
     main.innerHTML =
       '<header class="page-head pd-head"><div><div class="pd-eyebrow">PARENT DASHBOARD</div><h1 class="page-title">学習改善ダッシュボード</h1><div class="page-sub">成績を見る画面ではなく、次に何を直すかを決める画面です。</div></div><div class="page-actions"><button class="btn ghost" id="pdGoReview">復習一覧</button><button class="btn primary" id="pdGoChallenge">問題に挑戦</button></div></header>'+
@@ -387,14 +522,16 @@
       '<article class="pd-panel"><div class="pd-panel-head"><div><span>02</span><h3>今週の実績</h3></div><small>自力時間を優先</small></div><div class="pd-week-stats"><div><b>'+week.newCount+'</b><span>新問</span></div><div><b>'+week.reviews+'</b><span>再テスト</span></div><div><b>'+week.explains+'</b><span>説明</span></div><div><b>'+week.minutes+'</b><span>分</span></div></div></article></section>'+
       '<section class="pd-grid"><article class="pd-panel"><div class="pd-panel-head"><div><span>03</span><h3>弱点タグ</h3></div><small>誤答・ヒント・△を反映</small></div>'+weakHtml+'</article>'+
       '<article class="pd-panel pd-span-2"><div class="pd-panel-head"><div><span>04</span><h3>A〜G 誤答原因</h3></div><small>原因を直してから問題数を増やす</small></div><div class="pd-errors">'+errHtml+'</div></article></section>'+
-      '<section class="pd-panel pd-longitudinal"><div class="pd-panel-head"><div><span>05</span><h3>継続弱点｜直近5回</h3></div><small>再発頻度から今週の重点を最大2つに絞る</small></div>'+longitudinalHtml(longitudinal)+'</section>'+
-      '<section class="pd-panel pd-sapix" id="pdSapixPanel"><div class="pd-panel-head"><div><span>06</span><h3>SAPIXテスト自動分析</h3></div><small>PDFは端末内で解析・生データは保存しない</small></div>'+
+      '<section class="pd-panel pd-alpha"><div class="pd-panel-head"><div><span>05</span><h3>SAPIX α1入室目標</h3></div><small>基準点は実値のみ使用</small></div>'+alphaGoalHtml(alpha,ds.alphaGoal,sapix)+'</section>'+
+      '<section class="pd-panel pd-recovery" id="pdRecoveryPanel"><div class="pd-panel-head"><div><span>06</span><h3>弱点卒業トラッカー</h3></div><small>発見→再テスト→卒業</small></div>'+recoveryHtml(recovery)+'</section>'+
+      '<section class="pd-panel pd-longitudinal"><div class="pd-panel-head"><div><span>07</span><h3>継続弱点｜直近5回</h3></div><small>再発頻度から今週の重点を最大2つに絞る</small></div>'+longitudinalHtml(longitudinal)+'</section>'+
+      '<section class="pd-panel pd-sapix" id="pdSapixPanel"><div class="pd-panel-head"><div><span>08</span><h3>SAPIXテスト自動分析</h3></div><small>PDFは端末内で解析・生データは保存しない</small></div>'+
         '<div class="pd-sapix-import"><input type="file" id="pdSapixPdf" accept=".pdf,application/pdf" hidden><button class="btn primary" id="pdSapixPick">SAPIX成績票PDFを解析</button><span id="pdSapixStatus">PDF.jsは解析時だけ読み込みます。</span><details><summary>PDFが読めない場合：テキスト貼り付け</summary><textarea id="pdSapixText" rows="5" placeholder="PDFから抽出したテキストを貼り付け"></textarea><button class="btn ghost small" id="pdSapixAnalyzeText">貼り付け内容を解析</button></details></div>'+
         sapixAnalysisHtml(sapix)+'</section>'+
-      '<section class="pd-panel pd-tests"><div class="pd-panel-head"><div><span>07</span><h3>SAPIXテスト履歴</h3></div><small>PDF取込＋必要時のみ手入力</small></div>'+
+      '<section class="pd-panel pd-tests"><div class="pd-panel-head"><div><span>09</span><h3>SAPIXテスト履歴</h3></div><small>PDF取込＋必要時のみ手入力</small></div>'+
         '<div class="pd-test-form"><input type="date" id="pdTestDate"><input type="text" id="pdTestName" placeholder="例：9月度マンスリー"><input type="number" step="0.1" id="pdDev4" placeholder="4科偏差値"><input type="number" step="0.1" id="pdMath" placeholder="算数"><input type="number" step="0.1" id="pdJp" placeholder="国語"><button class="btn primary small" id="pdSaveTest">手入力</button></div>'+
         '<div class="pd-test-list">'+testsHtml+'</div></section>'+
-      '<section class="pd-panel pd-focus"><div class="pd-panel-head"><div><span>08</span><h3>今週直すこと</h3></div><small>最大2項目まで</small></div><textarea id="pdWeeklyFocus" rows="3" placeholder="例：式を書く前に図か表を1回作る。">'+esc(ds.weeklyFocus)+'</textarea><div class="pd-focus-actions"><span>端末内だけに保存します。</span><button class="btn ghost small" id="pdSaveFocus">保存</button></div></section>';
+      '<section class="pd-panel pd-focus"><div class="pd-panel-head"><div><span>10</span><h3>今週直すこと</h3></div><small>最大2項目まで</small></div><textarea id="pdWeeklyFocus" rows="3" placeholder="例：式を書く前に図か表を1回作る。">'+esc(ds.weeklyFocus)+'</textarea><div class="pd-focus-actions"><span>端末内だけに保存します。</span><button class="btn ghost small" id="pdSaveFocus">保存</button></div></section>';
 
     bindDashboard();
   }
@@ -416,6 +553,51 @@
     const challenge = document.getElementById('pdGoChallenge');
     if (review) review.onclick = function(){ setCoreRoute('review'); };
     if (challenge) challenge.onclick = function(){ setCoreRoute('challenge'); };
+
+    document.querySelectorAll('[data-pd-scroll-recovery]').forEach(function(btn) {
+      btn.onclick = function() {
+        const panel=document.getElementById('pdRecoveryPanel');
+        if(panel) panel.scrollIntoView({behavior:'smooth',block:'start'});
+      };
+    });
+
+    document.querySelectorAll('[data-recovery-pass]').forEach(function(btn) {
+      btn.onclick = function() {
+        if(!window.RecoveryEngine) return;
+        const ds=dashState();
+        ds.recoveryRecords=window.RecoveryEngine.sync(ds.sapixAnalyses||[],ds.recoveryRecords||[]);
+        ds.recoveryRecords=window.RecoveryEngine.addAttempt(ds.recoveryRecords,btn.getAttribute('data-recovery-pass'),'pass');
+        saveDash(ds);
+        renderDashboard();
+      };
+    });
+    document.querySelectorAll('[data-recovery-fail]').forEach(function(btn) {
+      btn.onclick = function() {
+        if(!window.RecoveryEngine) return;
+        const ds=dashState();
+        ds.recoveryRecords=window.RecoveryEngine.sync(ds.sapixAnalyses||[],ds.recoveryRecords||[]);
+        ds.recoveryRecords=window.RecoveryEngine.addAttempt(ds.recoveryRecords,btn.getAttribute('data-recovery-fail'),'fail');
+        saveDash(ds);
+        renderDashboard();
+      };
+    });
+
+    const saveAlpha=document.getElementById('pdSaveAlpha');
+    if(saveAlpha) saveAlpha.onclick=function() {
+      const ds=dashState();
+      const latest=latestSapix(ds);
+      ds.alphaGoal=ds.alphaGoal||{enabled:true,label:'SAPIX α1入室',currentClass:'',cutoffs:{}};
+      ds.alphaGoal.currentClass=(document.getElementById('pdAlphaCurrentClass')||{}).value||'';
+      if(latest) {
+        const key=analysisKey(latest);
+        const raw=(document.getElementById('pdAlphaCutoff')||{}).value;
+        ds.alphaGoal.cutoffs=ds.alphaGoal.cutoffs||{};
+        if(raw==='') delete ds.alphaGoal.cutoffs[key];
+        else ds.alphaGoal.cutoffs[key]=Number(raw);
+      }
+      saveDash(ds);
+      renderDashboard();
+    };
 
     const pickPdf = document.getElementById('pdSapixPick');
     const pdfInput = document.getElementById('pdSapixPdf');
@@ -467,6 +649,7 @@
         a.causes = a.causes || {};
         const id = sel.getAttribute('data-pd-cause');
         if (sel.value) a.causes[id] = sel.value; else delete a.causes[id];
+        if(window.RecoveryEngine) ds.recoveryRecords=window.RecoveryEngine.sync(ds.sapixAnalyses||[],ds.recoveryRecords||[]);
         saveDash(ds);
         renderDashboard();
       };
@@ -479,6 +662,7 @@
       if (!a) return;
       const key = analysisKey(a);
       ds.sapixAnalyses = (ds.sapixAnalyses || []).filter(function(x){ return analysisKey(x)!==key; });
+      if(window.RecoveryEngine) ds.recoveryRecords=window.RecoveryEngine.sync(ds.sapixAnalyses||[],ds.recoveryRecords||[]);
       saveDash(ds);
       renderDashboard();
     };
