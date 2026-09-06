@@ -158,8 +158,10 @@
     const weakSet = {};
     weak.slice(0,3).forEach(function(x){ weakSet[x[0]] = x[1]; });
     const ds = dashState();
-    const latest = (ds.sapixAnalyses || [])[0] || null;
-    const sapixWords = latest && Array.isArray(latest.focusKeywords) ? latest.focusKeywords : [];
+    const latest = latestSapix(ds);
+    const latestWords = latest && Array.isArray(latest.focusKeywords) ? latest.focusKeywords : [];
+    const longitudinal = longitudinalReport(ds);
+    const repeatWords = longitudinal && Array.isArray(longitudinal.recommendationKeywords) ? longitudinal.recommendationKeywords : [];
     return problemBank().filter(function(p) {
       const st = state.stats && state.stats[p.id];
       return !dueIds[p.id] && !isMastered(st);
@@ -170,8 +172,11 @@
       if ((st.hints || 0) > 0) score += 20;
       (p.tags || []).forEach(function(t){ score += (weakSet[t] || 0) * 6; });
       const haystack = [p.title,p.familyName,p.family].concat(p.tags || []).join(' ');
-      sapixWords.forEach(function(word) {
-        if (word && haystack.indexOf(word) >= 0) score += 42;
+      latestWords.forEach(function(word) {
+        if (word && haystack.indexOf(word) >= 0) score += 28;
+      });
+      repeatWords.forEach(function(word) {
+        if (word && haystack.indexOf(word) >= 0) score += 58;
       });
       return [p, score];
     }).sort(function(a,b){ return b[1]-a[1]; }).slice(0,limit).map(function(x){ return x[0]; });
@@ -186,7 +191,60 @@
   }
 
   function latestSapix(ds) {
-    return (ds.sapixAnalyses || [])[0] || null;
+    return (ds.sapixAnalyses || []).slice().sort(function(a,b) {
+      const ad=String(a&&a.date||''), bd=String(b&&b.date||'');
+      if (ad!==bd) return bd.localeCompare(ad);
+      return String(b&&b.importedAt||'').localeCompare(String(a&&a.importedAt||''));
+    })[0] || null;
+  }
+
+  function longitudinalReport(ds) {
+    if (!window.LongitudinalAnalyzer) return null;
+    try { return window.LongitudinalAnalyzer.analyze(ds.sapixAnalyses || [], 5); }
+    catch (e) { return null; }
+  }
+
+  function trendWord(t) {
+    if (!t || t.status==='insufficient') return '判定保留';
+    if (t.status==='improving') return '改善';
+    if (t.status==='worsening') return '悪化';
+    return '横ばい';
+  }
+
+  function trendClass(t) {
+    if (!t) return '';
+    return t.status==='improving'?'good':t.status==='worsening'?'bad':'';
+  }
+
+  function longitudinalHtml(report) {
+    if (!report || report.window < 2) {
+      return '<div class="pd-long-empty"><b>2回以上のSAPIX結果で継続弱点を判定します。</b><p>単回の失点を「弱点」と決めつけず、同じ誤答原因・分野が繰り返すかを確認します。</p></div>';
+    }
+    const priorities=(report.priorities||[]).map(function(p,i) {
+      return '<div class="pd-long-priority"><span>重点 '+(i+1)+'</span><div><b>'+esc(p.title)+'</b><small>'+esc(p.evidence)+'</small><p>'+esc(p.action)+'</p></div></div>';
+    }).join('') || '<div class="pd-long-ok"><b>繰り返し弱点はまだ確定していません。</b><p>単発の失点より、次のテストで同じ原因が再発するかを見ます。</p></div>';
+
+    const causes=(report.causes||[]).filter(function(x){return x.tests>0;}).slice(0,4).map(function(x) {
+      return '<div class="pd-long-row"><div><b>'+esc(x.code+' '+x.label)+'</b><small>計'+x.occurrences+'件</small></div><span>A〜G入力済み'+report.causeEnteredTests+'回中 '+x.tests+'回</span></div>';
+    }).join('') || emptyNote('A〜Gの原因入力がまだありません。答案を確認したものだけ記録します。');
+
+    const domains=(report.domains||[]).filter(function(x){return x.tests>0;}).slice(0,4).map(function(x) {
+      return '<div class="pd-long-row"><div><b>'+esc(x.domain)+'</b><small>'+(x.latest?'直近テストでも弱い':'過去に反復')+'</small></div><span>直近'+report.window+'回中 '+x.tests+'回</span></div>';
+    }).join('') || emptyNote('分野別の反復弱点はまだ検出されていません。');
+
+    const tr=report.recoverableTrend||{};
+    const md=report.mathDevTrend||{};
+    const history=(report.tests||[]).map(function(t) {
+      return '<div class="pd-long-test"><span>'+esc(t.date||'')+'</span><b>算 '+esc(t.mathDev==null?'—':t.mathDev)+'</b><span>70%以上失点 '+t.mustCount+'問</span><span>回収候補 '+t.recoverablePoints+'点</span></div>';
+    }).join('');
+
+    return '<div class="pd-long-wrap">'+
+      '<div class="pd-long-priorities">'+priorities+'</div>'+
+      '<div class="pd-long-grid"><div><h4>繰り返す誤答原因</h4>'+causes+'</div><div><h4>繰り返す分野</h4>'+domains+'</div></div>'+
+      '<div class="pd-long-trends"><div><span>正答率50%以上の失点</span><b class="'+trendClass(tr)+'">'+trendWord(tr)+'</b><small>'+(tr.priorAvg==null?'比較データ不足':'直近 '+tr.latest+'点 / それ以前平均 '+tr.priorAvg+'点')+'</small></div><div><span>算数偏差値</span><b class="'+trendClass(md)+'">'+trendWord(md)+'</b><small>'+(md.priorAvg==null?'比較データ不足':'直近 '+md.latest+' / それ以前平均 '+md.priorAvg)+'</small></div></div>'+
+      '<div class="pd-long-history">'+history+'</div>'+
+      '<div class="pd-long-note">分野の反復判定は「平均との差−5pt以下」または「得点率60%未満」。A〜Gは自動推定せず、手動確定した原因だけ集計します。テスト難度が異なるため、偏差値の上下だけで理解度を断定しません。</div>'+
+      '</div>';
   }
 
   function analysisKey(a) {
@@ -279,6 +337,7 @@
     const plan = currentPlan(state);
     const rec = recommended(state, 3);
     const sapix = latestSapix(ds);
+    const longitudinal = longitudinalReport(ds);
     const latestTests = ds.tests.slice().sort(function(a,b){ return String(b.date).localeCompare(String(a.date)); }).slice(0,5);
 
     let actionHtml = '';
@@ -304,13 +363,16 @@
     }).join('') : emptyNote('SAPIXテストPDFを取り込むか、手入力すると推移を残せます。');
 
     const sapixMetrics = sapix && sapix.metrics || {};
-    const priority = sapix && (sapixMetrics.mustCount || 0) > 0
-      ? 'SAPIXで正答率70%以上の取りこぼしが '+sapixMetrics.mustCount+'問・'+sapixMetrics.mustPoints+'点。まず元答案で原因を特定して解き直す。'
-      : due.length > 0
-        ? '今日の最優先は再テスト '+due.length+'問。新問より先に、ヒントなしで再現できるか確認する。'
-        : triangle > 0
-          ? '△問題が '+triangle+'問あります。新しい難問を増やす前に、説明できる状態まで戻す。'
-          : '再テスト期限はありません。今週テーマに沿って新問を進める。';
+    const longTop = longitudinal && longitudinal.priorities && longitudinal.priorities[0];
+    const priority = longTop
+      ? '継続弱点：'+longTop.title+'。'+longTop.action
+      : sapix && (sapixMetrics.mustCount || 0) > 0
+        ? 'SAPIXで正答率70%以上の取りこぼしが '+sapixMetrics.mustCount+'問・'+sapixMetrics.mustPoints+'点。まず元答案で原因を特定して解き直す。'
+        : due.length > 0
+          ? '今日の最優先は再テスト '+due.length+'問。新問より先に、ヒントなしで再現できるか確認する。'
+          : triangle > 0
+            ? '△問題が '+triangle+'問あります。新しい難問を増やす前に、説明できる状態まで戻す。'
+            : '再テスト期限はありません。今週テーマに沿って新問を進める。';
 
     main.innerHTML =
       '<header class="page-head pd-head"><div><div class="pd-eyebrow">PARENT DASHBOARD</div><h1 class="page-title">学習改善ダッシュボード</h1><div class="page-sub">成績を見る画面ではなく、次に何を直すかを決める画面です。</div></div><div class="page-actions"><button class="btn ghost" id="pdGoReview">復習一覧</button><button class="btn primary" id="pdGoChallenge">問題に挑戦</button></div></header>'+
@@ -325,13 +387,14 @@
       '<article class="pd-panel"><div class="pd-panel-head"><div><span>02</span><h3>今週の実績</h3></div><small>自力時間を優先</small></div><div class="pd-week-stats"><div><b>'+week.newCount+'</b><span>新問</span></div><div><b>'+week.reviews+'</b><span>再テスト</span></div><div><b>'+week.explains+'</b><span>説明</span></div><div><b>'+week.minutes+'</b><span>分</span></div></div></article></section>'+
       '<section class="pd-grid"><article class="pd-panel"><div class="pd-panel-head"><div><span>03</span><h3>弱点タグ</h3></div><small>誤答・ヒント・△を反映</small></div>'+weakHtml+'</article>'+
       '<article class="pd-panel pd-span-2"><div class="pd-panel-head"><div><span>04</span><h3>A〜G 誤答原因</h3></div><small>原因を直してから問題数を増やす</small></div><div class="pd-errors">'+errHtml+'</div></article></section>'+
-      '<section class="pd-panel pd-sapix" id="pdSapixPanel"><div class="pd-panel-head"><div><span>05</span><h3>SAPIXテスト自動分析</h3></div><small>PDFは端末内で解析・生データは保存しない</small></div>'+
+      '<section class="pd-panel pd-longitudinal"><div class="pd-panel-head"><div><span>05</span><h3>継続弱点｜直近5回</h3></div><small>再発頻度から今週の重点を最大2つに絞る</small></div>'+longitudinalHtml(longitudinal)+'</section>'+
+      '<section class="pd-panel pd-sapix" id="pdSapixPanel"><div class="pd-panel-head"><div><span>06</span><h3>SAPIXテスト自動分析</h3></div><small>PDFは端末内で解析・生データは保存しない</small></div>'+
         '<div class="pd-sapix-import"><input type="file" id="pdSapixPdf" accept=".pdf,application/pdf" hidden><button class="btn primary" id="pdSapixPick">SAPIX成績票PDFを解析</button><span id="pdSapixStatus">PDF.jsは解析時だけ読み込みます。</span><details><summary>PDFが読めない場合：テキスト貼り付け</summary><textarea id="pdSapixText" rows="5" placeholder="PDFから抽出したテキストを貼り付け"></textarea><button class="btn ghost small" id="pdSapixAnalyzeText">貼り付け内容を解析</button></details></div>'+
         sapixAnalysisHtml(sapix)+'</section>'+
-      '<section class="pd-panel pd-tests"><div class="pd-panel-head"><div><span>06</span><h3>SAPIXテスト履歴</h3></div><small>PDF取込＋必要時のみ手入力</small></div>'+
+      '<section class="pd-panel pd-tests"><div class="pd-panel-head"><div><span>07</span><h3>SAPIXテスト履歴</h3></div><small>PDF取込＋必要時のみ手入力</small></div>'+
         '<div class="pd-test-form"><input type="date" id="pdTestDate"><input type="text" id="pdTestName" placeholder="例：9月度マンスリー"><input type="number" step="0.1" id="pdDev4" placeholder="4科偏差値"><input type="number" step="0.1" id="pdMath" placeholder="算数"><input type="number" step="0.1" id="pdJp" placeholder="国語"><button class="btn primary small" id="pdSaveTest">手入力</button></div>'+
         '<div class="pd-test-list">'+testsHtml+'</div></section>'+
-      '<section class="pd-panel pd-focus"><div class="pd-panel-head"><div><span>07</span><h3>今週直すこと</h3></div><small>最大2項目まで</small></div><textarea id="pdWeeklyFocus" rows="3" placeholder="例：式を書く前に図か表を1回作る。">'+esc(ds.weeklyFocus)+'</textarea><div class="pd-focus-actions"><span>端末内だけに保存します。</span><button class="btn ghost small" id="pdSaveFocus">保存</button></div></section>';
+      '<section class="pd-panel pd-focus"><div class="pd-panel-head"><div><span>08</span><h3>今週直すこと</h3></div><small>最大2項目まで</small></div><textarea id="pdWeeklyFocus" rows="3" placeholder="例：式を書く前に図か表を1回作る。">'+esc(ds.weeklyFocus)+'</textarea><div class="pd-focus-actions"><span>端末内だけに保存します。</span><button class="btn ghost small" id="pdSaveFocus">保存</button></div></section>';
 
     bindDashboard();
   }
@@ -414,7 +477,8 @@
       const ds = dashState();
       const a = latestSapix(ds);
       if (!a) return;
-      ds.sapixAnalyses = (ds.sapixAnalyses || []).slice(1);
+      const key = analysisKey(a);
+      ds.sapixAnalyses = (ds.sapixAnalyses || []).filter(function(x){ return analysisKey(x)!==key; });
       saveDash(ds);
       renderDashboard();
     };
