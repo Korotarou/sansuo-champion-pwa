@@ -197,7 +197,8 @@
     const tests=(analyses||[]).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
     const latest=tests[0]||null;
     const g=goal||{};
-    const cutoff=Number(g.cutoffScore);
+    const hasCutoff=g.cutoffScore!==''&&g.cutoffScore!==null&&g.cutoffScore!==undefined;
+    const cutoff=hasCutoff?Number(g.cutoffScore):NaN;
     const own=latest&&latest.summary&&latest.summary.total4?Number(latest.summary.total4.score):NaN;
     const max=latest&&latest.summary&&latest.summary.total4?Number(latest.summary.total4.max):NaN;
     const recoverable=latest&&latest.metrics?Number(latest.metrics.recoverablePoints||0):0;
