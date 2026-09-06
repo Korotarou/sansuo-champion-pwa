@@ -1,6 +1,6 @@
 {
-  "version": "2.2.0",
-  "build": "20260906-v04",
+  "version": "2.3.0",
+  "build": "20260906-v05",
   "problem_count": 438,
   "core_problems": 18,
   "generated_problems": 420,
@@ -31,5 +31,16 @@
     "A-G誤答原因の手動確定",
     "弱点に応じた内部問題推薦"
   ],
-  "pdfjs_version": "6.3.289"
+  "pdfjs_version": "6.3.289",
+  "longitudinal_analysis": true,
+  "longitudinal_features": [
+    "直近5回のSAPIX横断分析",
+    "A-G誤答原因の再発頻度",
+    "分野別弱点の再発頻度",
+    "正答率70%以上の取りこぼし再発",
+    "回収可能点の直近傾向",
+    "算数偏差値の参考トレンド",
+    "今週の重点を最大2項目へ自動集約",
+    "反復弱点を438問推薦へ反映"
+  ]
 }
