@@ -72,3 +72,55 @@
   .pd-test-row>div:nth-child(2){flex-direction:column;gap:2px}
   .pd-error-row{grid-template-columns:28px 115px 1fr 22px;gap:7px}
 }
+.pd-sapix{margin-bottom:14px}
+.pd-sapix-import{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px;border:1px solid rgba(139,112,255,.18);background:rgba(139,112,255,.055);border-radius:14px;margin-bottom:16px}
+.pd-sapix-import>span{font-size:11px;color:#8d9ab2;flex:1;min-width:200px}
+.pd-sapix-import details{width:100%;border-top:1px solid rgba(255,255,255,.07);padding-top:10px}
+.pd-sapix-import summary{cursor:pointer;color:#8996ae;font-size:12px}
+.pd-sapix-import textarea{width:100%;box-sizing:border-box;margin:10px 0;background:#09162b;border:1px solid rgba(255,255,255,.1);color:#eef3ff;border-radius:10px;padding:10px;font:inherit;resize:vertical}
+.pd-sapix-empty{padding:22px;border:1px dashed rgba(255,255,255,.14);border-radius:14px;color:#9aa6bd;line-height:1.6}
+.pd-sapix-empty b{color:#eef3ff}
+.pd-sapix-empty p{margin:6px 0 0;font-size:12px}
+.pd-sapix-title{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:12px}
+.pd-sapix-title b{font-size:17px}
+.pd-sapix-title small{display:block;color:#7f8da5;margin-top:4px}
+.pd-parse-badge{font-size:11px;font-weight:900;padding:6px 9px;border-radius:999px;white-space:nowrap}
+.pd-parse-badge.ok{background:rgba(64,211,148,.12);color:#70e0ad;border:1px solid rgba(64,211,148,.22)}
+.pd-parse-badge.warn{background:rgba(244,197,66,.12);color:#f4c542;border:1px solid rgba(244,197,66,.24)}
+.pd-sapix-warning{padding:10px 12px;margin-bottom:12px;border-radius:10px;background:rgba(244,197,66,.08);border:1px solid rgba(244,197,66,.18);color:#e7cc78;font-size:12px}
+.pd-sapix-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.pd-sapix-kpis .pd-metric{background:rgba(4,13,30,.43)}
+.pd-sapix-columns{display:grid;grid-template-columns:minmax(240px,.85fr) minmax(420px,1.65fr);gap:18px}
+.pd-sapix-columns h4{font-size:12px;letter-spacing:.04em;color:#a9b5c9;margin:0 0 10px}
+.pd-sapix-section{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.pd-sapix-section>div:first-child{min-width:0}
+.pd-sapix-section b{font-size:12px}
+.pd-sapix-section small{display:block;color:#728099;margin-top:3px;font-size:10px}
+.pd-sapix-section>div:last-child{display:flex;gap:9px;align-items:center;font-size:10px;color:#8996ae;white-space:nowrap}
+.pd-sapix-section .neg{color:#ff9b9b}
+.pd-sapix-section .pos{color:#77d9ac}
+.pd-sapix-questions{display:flex;flex-direction:column;gap:6px}
+.pd-sapix-question{display:grid;grid-template-columns:72px 32px 78px 1fr minmax(150px,190px);gap:8px;align-items:center;padding:9px 10px;border-radius:10px;background:rgba(4,13,30,.48);border:1px solid rgba(255,255,255,.06);font-size:11px}
+.pd-sapix-question.must{border-color:rgba(255,111,111,.28);background:rgba(255,90,90,.055)}
+.pd-sapix-question.target{border-color:rgba(244,197,66,.22)}
+.pd-sapix-question.growth{border-color:rgba(139,112,255,.18)}
+.pd-sq-id{font-weight:900;font-size:12px}
+.pd-sq-mark{font-size:16px;font-weight:950;text-align:center}
+.pd-sq-mark.ok{color:#6fdaa9}
+.pd-sq-mark.ng{color:#ff8f8f}
+.pd-sapix-question small{display:block;color:#77859d;margin-top:2px}
+.pd-sq-label{color:#aeb8ca}
+.pd-sq-win{justify-self:end;color:#70d5a5;font-weight:900}
+.pd-cause-select{width:100%;min-width:0;background:#09162b;border:1px solid rgba(255,255,255,.1);color:#dfe6f3;border-radius:8px;padding:7px 8px;font-size:11px}
+.pd-sapix-foot{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)}
+.pd-sapix-foot span{font-size:11px;color:#7f8ca4;line-height:1.5}
+@media(max-width:1000px){
+  .pd-sapix-kpis{grid-template-columns:repeat(2,1fr)}
+  .pd-sapix-columns{grid-template-columns:1fr}
+}
+@media(max-width:680px){
+  .pd-sapix-kpis{grid-template-columns:1fr 1fr}
+  .pd-sapix-question{grid-template-columns:58px 28px 60px 1fr}
+  .pd-sapix-question .pd-cause-select,.pd-sq-win{grid-column:1/-1}
+  .pd-sapix-foot{align-items:flex-start;flex-direction:column}
+}
