@@ -205,7 +205,7 @@
     return {
       schema:2,
       source:'sapix-pdf',
-      sourceName: String(sourceName || '').replace(/[^\w\-\.（）()＜＞一-龥ぁ-んァ-ン]/g,'').slice(0,80),
+      sourceName: sourceName ? 'local-file' : '',
       importedAt:new Date().toISOString(),
       name:parseTitle(all),
       date:parseDate(all),
