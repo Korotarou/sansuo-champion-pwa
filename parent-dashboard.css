@@ -175,7 +175,7 @@
 .pd-alpha-stats>div{padding:13px 14px;border-radius:12px;background:rgba(4,13,30,.43);border:1px solid rgba(255,255,255,.06)}
 .pd-alpha-stats span{display:block;font-size:10px;color:#7c89a0;margin-bottom:5px}
 .pd-alpha-stats b{font-size:17px}
-.pd-alpha-form{display:grid;grid-template-columns:1fr 1.2fr auto;gap:10px;align-items:end}
+.pd-alpha-form{display:grid;grid-template-columns:.8fr 1.2fr .75fr auto;gap:10px;align-items:end}
 .pd-alpha-form label{font-size:10px;color:#8794aa;font-weight:800}
 .pd-alpha-form input{width:100%;box-sizing:border-box;margin-top:5px;background:#09162b;border:1px solid rgba(255,255,255,.1);color:#eef3ff;border-radius:9px;padding:9px 10px;font:inherit}
 .pd-alpha-note{font-size:10px;color:#707d94;line-height:1.45}
