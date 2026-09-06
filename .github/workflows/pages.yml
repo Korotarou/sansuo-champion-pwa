@@ -40,6 +40,8 @@ jobs:
           node --check sapix-analyzer.js
           node --check parent-dashboard.js
           node --check longitudinal-engine.js
+          node --check recovery-engine.js
+          grep -q 'recovery-engine.js' index.html
           grep -q 'longitudinal-engine.js' index.html
           grep -q 'sapix-analyzer.js' index.html
           grep -q 'parent-dashboard.js' index.html
@@ -113,6 +115,34 @@ jobs:
           if(r.priorities.length<2) throw new Error('priority selection failed');
           if(!r.recommendationKeywords.includes('平面図形')) throw new Error('recommendation keywords failed');
           console.log('Longitudinal engine PASS');
+          NODE
+
+      - name: Recovery graduation engine test
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          global.window={LongitudinalAnalyzer:{
+            weakDomainsForTest:()=>[],
+            analyze:()=>({domains:[]})
+          }};
+          eval(fs.readFileSync('recovery-engine.js','utf8'));
+          const a={date:'2026-09-01',name:'SAPIX',causes:{'1-(1)':'F'},mathQuestions:[
+            {id:'1-(1)',points:5,rate:80,correct:false,bucket:'must'}
+          ],summary:{total4:{score:350,max:500}},metrics:{recoverablePoints:15}};
+          let records=window.RecoveryEngine.sync([a],[]);
+          if(records.length!==1||records[0].status!=='unresolved') throw new Error('sync failed');
+          records=window.RecoveryEngine.addAttempt(records,records[0].id,'pass','2026-09-02');
+          if(records[0].status!=='strengthening') throw new Error('stage1 failed');
+          records=window.RecoveryEngine.addAttempt(records,records[0].id,'fail','2026-09-04');
+          if(records[0].status!=='unresolved') throw new Error('fail reset failed');
+          records=window.RecoveryEngine.addAttempt(records,records[0].id,'pass','2026-09-05');
+          records=window.RecoveryEngine.addAttempt(records,records[0].id,'pass','2026-09-08');
+          if(records[0].status!=='graduated') throw new Error('graduation failed');
+          const alpha=window.RecoveryEngine.alphaStatus([a],{label:'SAPIX α1入室',cutoffScore:360,currentClass:'H'});
+          if(alpha.gap!==10||!alpha.recoverableCoversGap) throw new Error('alpha gap failed');
+          console.log('Recovery/alpha1 engine PASS');
           NODE
 
       - name: Verify PWA structure and privacy
