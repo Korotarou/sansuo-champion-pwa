@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="隼 理科" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>隼 理科ラボ｜SAPIX α1 × 筑駒・開成</title>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand" role="button" tabindex="0" data-view="home" aria-label="ホームへ">
+        <div class="brand-mark">理</div>
+        <div>
+          <div class="brand-title">隼 理科ラボ</div>
+          <div class="brand-sub">SAPIX α1 × 筑駒・開成</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="installBtn" hidden aria-label="アプリをインストール">＋</button>
+        <button class="streak-pill" data-view="record" aria-label="学習記録を見る"><span id="streakCount">0</span>日</button>
+      </div>
+    </header>
+
+    <main id="main" class="main" aria-live="polite">
+      <section id="view-home" class="view active">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">小学4年・現在地から最難関へ</p>
+            <h1>知識を、<br><span>考える力</span>に変える。</h1>
+            <p class="hero-copy">SAPIXの復習を軸に、原理・実験・資料読解・初見考察まで。答えを覚えるのではなく、自力で説明できる状態をつくります。</p>
+          </div>
+          <div class="readiness-card">
+            <div class="readiness-head">
+              <span>α1準備度</span>
+              <span class="tiny">アプリ独自指標</span>
+            </div>
+            <div class="readiness-score"><span id="readinessScore">0</span><small>/100</small></div>
+            <div class="meter"><div id="readinessBar" class="meter-fill"></div></div>
+            <p id="readinessText" class="microcopy">まず5問解くと現在地が見えてきます。</p>
+          </div>
+        </div>
+
+        <section class="today-panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">TODAY</p>
+              <h2>今日の15分</h2>
+            </div>
+            <span id="todayProgress" class="progress-chip">0 / 5</span>
+          </div>
+          <div class="today-grid">
+            <button class="mission-card primary" data-start="alpha">
+              <div class="mission-kicker">最優先</div>
+              <div class="mission-title">α1ルート</div>
+              <div class="mission-desc">基礎2＋考察2＋再テスト1</div>
+              <div class="mission-arrow">始める →</div>
+            </button>
+            <button class="mission-card" data-start="review">
+              <div class="mission-kicker">授業後</div>
+              <div class="mission-title">SAPIX復習</div>
+              <div class="mission-desc">今日の単元を短く確認</div>
+              <div class="mission-arrow">5問 →</div>
+            </button>
+            <button class="mission-card" data-start="oral">
+              <div class="mission-kicker">説明力</div>
+              <div class="mission-title">理科口頭試問</div>
+              <div class="mission-desc">「なぜ？」まで言えるか</div>
+              <div class="mission-arrow">3問 →</div>
+            </button>
+          </div>
+        </section>
+
+        <section class="mode-section">
+          <div class="section-heading"><div><p class="eyebrow">TRAINING</p><h2>力を分けて鍛える</h2></div></div>
+          <div class="mode-grid">
+            <button class="mode-card" data-start="knowledge"><span class="mode-num">01</span><h3>知識・原理</h3><p>覚えた知識を理由までつなぐ</p></button>
+            <button class="mode-card" data-start="experiment"><span class="mode-num">02</span><h3>実験・観察</h3><p>条件・結果・理由を整理する</p></button>
+            <button class="mode-card" data-start="data"><span class="mode-num">03</span><h3>表・グラフ</h3><p>数字から規則を見つける</p></button>
+            <button class="mode-card" data-start="transfer"><span class="mode-num">04</span><h3>初見考察</h3><p>知らない設定でも考え抜く</p></button>
+            <button class="mode-card accent" data-start="tsukukoma"><span class="mode-num">05</span><h3>筑駒40分</h3><p>100点想定・オリジナル演習</p></button>
+            <button class="mode-card accent" data-start="kaisei"><span class="mode-num">06</span><h3>開成40分</h3><p>70点想定・オリジナル演習</p></button>
+            <button class="mode-card dark" data-start="noai"><span class="mode-num">07</span><h3>AI禁止テスト</h3><p>終了までヒント・解説なし</p></button>
+            <button class="mode-card" data-view="library"><span class="mode-num">08</span><h3>単元別</h3><p>生物・地学・物理・化学</p></button>
+          </div>
+        </section>
+
+        <section class="principle-strip">
+          <div><strong>学習判定</strong><span>正解だけでは「理解済み」にしません。</span></div>
+          <div class="principle-flow"><span>正解</span><b>＋</b><span>理由を説明</span><b>＋</b><span>後日再現</span><b>＝</b><span class="highlight">定着</span></div>
+        </section>
+      </section>
+
+      <section id="view-quiz" class="view">
+        <div class="quiz-topline">
+          <button class="back-btn" data-view="home">← 終了</button>
+          <div class="quiz-meta"><span id="quizModeLabel">α1ルート</span><span id="quizTimer" class="timer" hidden>40:00</span></div>
+          <span id="quizCounter">1 / 5</span>
+        </div>
+        <div class="quiz-progress"><div id="quizProgressBar"></div></div>
+
+        <article class="question-card">
+          <div class="question-tags"><span id="qDomain">物理</span><span id="qLevel">Lv.2</span><span id="qSkill">原理</span></div>
+          <h2 id="qPrompt">問題文</h2>
+          <div id="qFigure" class="question-figure" hidden></div>
+          <div id="qChoices" class="choices"></div>
+          <textarea id="qFree" class="free-answer" rows="3" placeholder="自分の考えを書いてから答え合わせ" hidden></textarea>
+
+          <div class="question-actions">
+            <button id="hintBtn" class="secondary-btn">ヒントを1つ</button>
+            <button id="checkBtn" class="primary-btn">答え合わせ</button>
+          </div>
+          <div id="hintBox" class="hint-box" hidden></div>
+          <div id="feedbackBox" class="feedback-box" hidden></div>
+        </article>
+
+        <div id="reasonPanel" class="reason-panel" hidden>
+          <p class="eyebrow">UNDERSTANDING CHECK</p>
+          <h3>なぜそうなるか、自分の言葉で説明できた？</h3>
+          <div class="reason-actions">
+            <button class="reason-btn" data-reason="yes">説明できた</button>
+            <button class="reason-btn" data-reason="notyet">まだ説明できない</button>
+          </div>
+        </div>
+
+        <div id="causePanel" class="cause-panel" hidden>
+          <p class="eyebrow">ERROR DIAGNOSIS</p>
+          <h3>どこで間違えた？</h3>
+          <div class="cause-grid">
+            <button data-cause="knowledge">知らなかった</button>
+            <button data-cause="principle">原理があいまい</button>
+            <button data-cause="reading">資料・条件の読み違い</button>
+            <button data-cause="strategy">知っていたが使えなかった</button>
+            <button data-cause="calc">計算ミス</button>
+            <button data-cause="careless">ケアレスミス</button>
+          </div>
+        </div>
+
+        <button id="nextBtn" class="next-btn" hidden>次の問題 →</button>
+      </section>
+
+      <section id="view-result" class="view">
+        <div class="result-hero">
+          <p class="eyebrow">SESSION COMPLETE</p>
+          <h2 id="resultTitle">今日の学習結果</h2>
+          <div class="result-score"><span id="resultScore">0</span><small>%</small></div>
+          <p id="resultMessage"></p>
+        </div>
+        <div class="result-grid">
+          <div><span>正答</span><strong id="resultCorrect">0/5</strong></div>
+          <div><span>説明できた</span><strong id="resultExplain">0/5</strong></div>
+          <div><span>再確認</span><strong id="resultReview">0問</strong></div>
+        </div>
+        <div id="resultWeakness" class="result-note"></div>
+        <div class="result-actions">
+          <button class="primary-btn" data-view="home">ホームへ</button>
+          <button class="secondary-btn" data-start="noai">AIなし再テスト</button>
+        </div>
+      </section>
+
+      <section id="view-library" class="view">
+        <div class="page-head"><button class="back-btn" data-view="home">← ホーム</button><p class="eyebrow">UNIT MAP</p><h2>単元別トレーニング</h2><p>弱い単元だけを短く回します。</p></div>
+        <div class="domain-grid">
+          <button class="domain-card bio" data-domain="生物"><span>生物</span><strong id="bioMastery">0%</strong><small>植物・動物・人体</small></button>
+          <button class="domain-card earth" data-domain="地学"><span>地学</span><strong id="earthMastery">0%</strong><small>天気・天体・大地</small></button>
+          <button class="domain-card physics" data-domain="物理"><span>物理</span><strong id="physicsMastery">0%</strong><small>力・光・音・電気・熱</small></button>
+          <button class="domain-card chem" data-domain="化学"><span>化学</span><strong id="chemMastery">0%</strong><small>物質・水溶液・燃焼</small></button>
+        </div>
+        <div class="level-box">
+          <h3>レベル</h3>
+          <div class="level-list">
+            <div><span>Lv.1</span><p>基本確認</p></div>
+            <div><span>Lv.2</span><p>SAPIX標準</p></div>
+            <div><span>Lv.3</span><p>α1・SAPIX上位</p></div>
+            <div><span>Lv.4</span><p>最難関校につながる初見考察</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-record" class="view">
+        <div class="page-head"><button class="back-btn" data-view="home">← ホーム</button><p class="eyebrow">LEARNING RECORD</p><h2>学習記録</h2><p>「できたつもり」ではなく、再現できるかを見ます。</p></div>
+        <div class="stats-grid">
+          <div class="stat-card"><span>総回答</span><strong id="statAnswered">0</strong></div>
+          <div class="stat-card"><span>正答率</span><strong id="statAccuracy">0%</strong></div>
+          <div class="stat-card"><span>説明率</span><strong id="statExplain">0%</strong></div>
+          <div class="stat-card"><span>要再確認</span><strong id="statDue">0</strong></div>
+        </div>
+        <div class="record-panel">
+          <div class="section-heading"><div><p class="eyebrow">WEAKNESS</p><h3>最近の誤答原因</h3></div></div>
+          <div id="causeBars" class="cause-bars"></div>
+        </div>
+        <div class="record-panel">
+          <div class="section-heading"><div><p class="eyebrow">REVIEW QUEUE</p><h3>AIなし再テスト候補</h3></div></div>
+          <div id="reviewQueue" class="review-queue"></div>
+        </div>
+        <div class="record-panel backup-panel">
+          <div><h3>データ保護</h3><p>学習記録はこのiPad内に保存されます。機種変更前にバックアップしてください。</p></div>
+          <div class="backup-actions"><button id="exportBtn" class="secondary-btn">記録を書き出す</button><label class="secondary-btn file-label">記録を読み込む<input id="importInput" type="file" accept="application/json" hidden></label></div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="メインナビゲーション">
+      <button class="nav-item active" data-view="home"><span>⌂</span><small>ホーム</small></button>
+      <button class="nav-item" data-view="library"><span>▦</span><small>単元</small></button>
+      <button class="nav-item" data-start="alpha"><span>▶</span><small>今日</small></button>
+      <button class="nav-item" data-view="record"><span>◫</span><small>記録</small></button>
+    </nav>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
