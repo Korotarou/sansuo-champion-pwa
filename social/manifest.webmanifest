@@ -1,0 +1,15 @@
+{
+  "name":"社会Lab 418｜SAPIX α1 × 筑駒・開成",
+  "short_name":"社会Lab418",
+  "description":"小学4年生のSAPIX社会を地理中心に固め、資料読解・因果説明・記述・再テストで最難関中学につながる思考力を育てるPWA",
+  "start_url":"./",
+  "scope":"./",
+  "display":"standalone",
+  "background_color":"#07111f",
+  "theme_color":"#0b1324",
+  "orientation":"any",
+  "icons":[
+    {"src":"assets/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"assets/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
