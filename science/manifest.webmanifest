@@ -1,6 +1,6 @@
 {
-  "name": "隼 理科ラボ｜SAPIX α1 × 筑駒・開成",
-  "short_name": "隼 理科",
+  "name": "理科ラボ｜SAPIX α1 × 筑駒・開成",
+  "short_name": "理科ラボ",
   "description": "SAPIXの復習からα1、筑駒・開成につながる理科の思考力を育てるオフライン学習PWA",
   "start_url": "./",
   "scope": "./",
