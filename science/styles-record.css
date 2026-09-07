@@ -1,0 +1,42 @@
+.page-head { margin:10px 0 26px; }
+.page-head h2 { margin:8px 0; font-size:34px; }
+.page-head p:last-child { color:var(--muted); }
+.domain-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+.domain-card { min-height:190px; border:0; border-radius:24px; padding:22px; text-align:left; cursor:pointer; display:flex; flex-direction:column; transition:.18s; }
+.domain-card span { font-size:13px; font-weight:900; }
+.domain-card strong { font-size:44px; margin-top:auto; }
+.domain-card small { margin-top:4px; color:rgba(0,0,0,.55); }
+.domain-card.bio { background:#dff3df; }.domain-card.earth { background:#f1e4d2; }.domain-card.physics { background:#dfe7ff; }.domain-card.chem { background:#e7def7; }
+.level-box { margin-top:18px; background:var(--panel); border:1px solid var(--line); border-radius:24px; padding:24px; }
+.level-box h3 { margin-top:0; }
+.level-list { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.level-list div { padding:14px; background:#f7f8fa; border-radius:14px; }
+.level-list span { font-weight:900; font-size:12px; }
+.level-list p { margin:6px 0 0; color:var(--muted); font-size:11px; line-height:1.5; }
+.stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.stat-card { background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:20px; }
+.stat-card span { display:block; color:var(--muted); font-size:11px; }
+.stat-card strong { display:block; margin-top:10px; font-size:32px; }
+.record-panel { margin-top:14px; background:var(--panel); border:1px solid var(--line); border-radius:24px; padding:22px; }
+.cause-bars { display:grid; gap:11px; }
+.cause-row { display:grid; grid-template-columns:170px 1fr 35px; gap:10px; align-items:center; font-size:12px; }
+.cause-track { height:8px; background:#eef0f3; border-radius:999px; overflow:hidden; }
+.cause-fill { height:100%; background:var(--navy); border-radius:999px; }
+.review-queue { display:grid; gap:8px; }
+.review-item { display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; padding:12px; border:1px solid var(--line); border-radius:14px; }
+.review-item .dot { width:9px; height:9px; border-radius:50%; background:var(--orange); }
+.review-item p { margin:0; font-size:12px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.review-item small { color:var(--muted); }
+.empty { color:var(--muted); font-size:13px; padding:10px 0; }
+.backup-panel { display:flex; justify-content:space-between; align-items:center; gap:20px; }
+.backup-panel h3 { margin:0 0 5px; }.backup-panel p { margin:0; color:var(--muted); font-size:12px; }
+.backup-actions { display:flex; gap:8px; flex-shrink:0; }
+.file-label { display:inline-flex; align-items:center; cursor:pointer; }
+.toast { position:fixed; left:50%; bottom:calc(92px + env(safe-area-inset-bottom)); transform:translate(-50%,20px); background:#111827; color:white; padding:10px 15px; border-radius:999px; font-size:12px; opacity:0; pointer-events:none; transition:.22s; z-index:50; }
+.toast.show { opacity:1; transform:translate(-50%,0); }
+@media (max-width: 900px){
+  .main{padding:18px}.hero{grid-template-columns:1fr;padding:34px;min-height:auto}.readiness-card{min-height:190px}.today-grid{grid-template-columns:1fr 1fr}.today-grid .primary{grid-column:span 2}.mode-grid{grid-template-columns:repeat(2,1fr)}.domain-grid{grid-template-columns:repeat(2,1fr)}.level-list{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width: 580px){
+  .topbar{padding-left:15px;padding-right:15px}.brand-sub{display:none}.main{padding:13px}.hero{padding:28px;border-radius:26px}.hero-copy{font-size:13px}.today-grid{grid-template-columns:1fr}.today-grid .primary{grid-column:auto}.mode-card{min-height:155px}.principle-strip{align-items:flex-start;flex-direction:column}.principle-flow{justify-content:flex-start}.question-card{border-radius:22px}.cause-grid{grid-template-columns:1fr 1fr}.result-grid,.stats-grid{grid-template-columns:1fr 1fr}.domain-grid{grid-template-columns:1fr 1fr}.backup-panel{align-items:flex-start;flex-direction:column}.backup-actions{width:100%;flex-direction:column}.cause-row{grid-template-columns:120px 1fr 28px}.result-actions{flex-direction:column}.result-actions button{width:100%}
+}
