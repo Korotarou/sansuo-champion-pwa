@@ -1,5 +1,5 @@
 function exportData(){
-  const payload={app:'隼 理科ラボ',version:APP_VERSION,exportedAt:new Date().toISOString(),state};
+  const payload={app:'理科ラボ',version:APP_VERSION,exportedAt:new Date().toISOString(),state};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob); const a=document.createElement('a');
   a.href=url; a.download=`hayabusa-science-backup-${todayKey()}.json`; a.click(); URL.revokeObjectURL(url);
