@@ -85,3 +85,17 @@ h1 span { color:var(--lime); }
 .nav-item span { font-size:19px; height:23px; }
 .nav-item small { font-size:9px; font-weight:700; }
 .nav-item.active { color:var(--lime); background:rgba(255,255,255,.08); }
+
+.weekly-panel { margin-top:24px; padding:26px; background:var(--panel); border:1px solid var(--line); border-radius:26px; box-shadow:0 8px 28px rgba(12,20,40,.04); }
+.weekly-panel .section-heading { margin-bottom:8px; }
+.weekly-start { border:0; background:var(--navy); color:var(--lime); border-radius:999px; padding:10px 15px; font-size:12px; font-weight:900; cursor:pointer; }
+.weekly-note { margin:0 0 16px; color:var(--muted); font-size:12px; line-height:1.7; }
+.weekly-focus-list { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.weekly-focus-item { border:1px solid var(--line); border-radius:18px; padding:16px; background:#fafbfc; }
+.weekly-focus-top { display:flex; justify-content:space-between; gap:10px; align-items:center; }
+.weekly-focus-rank { width:28px; height:28px; border-radius:9px; display:grid; place-items:center; background:var(--navy); color:white; font-size:11px; font-weight:900; flex:0 0 auto; }
+.weekly-focus-name { flex:1; font-weight:900; font-size:14px; }
+.weekly-focus-status { font-size:10px; color:var(--muted); font-weight:800; }
+.weekly-focus-meter { height:6px; background:#e8ebef; border-radius:999px; overflow:hidden; margin-top:13px; }
+.weekly-focus-fill { height:100%; background:var(--lime-dark); border-radius:999px; }
+.weekly-focus-meta { margin-top:8px; display:flex; justify-content:space-between; gap:8px; color:var(--muted); font-size:10px; }
