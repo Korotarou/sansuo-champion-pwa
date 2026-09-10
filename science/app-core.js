@@ -15,7 +15,8 @@ const modeConfig = {
   transfer: {label:'初見考察',count:6,time:null,skills:['考察'],minLevel:3},
   tsukukoma: {label:'筑駒40分',count:12,time:40*60,schoolScore:100},
   kaisei: {label:'開成40分',count:10,time:40*60,schoolScore:70},
-  noai: {label:'AI禁止テスト',count:8,time:null,noAI:true}
+  noai: {label:'AI禁止テスト',count:8,time:null,noAI:true},
+  weekly: {label:'今週の重点',count:7,time:null}
 };
 
 let state = loadState();
@@ -98,6 +99,54 @@ function readiness(){
   const reviewFactor=Math.max(0,1-Math.min(1,due/10));
   return Math.round(Math.min(100,(acc*.45+exp*.25+adv*.20+reviewFactor*.10)*100));
 }
+const WEEKLY_SEED_PRIORITIES = [
+  {topic:'星の動き', base:3.0, label:'星の動き'},
+  {topic:'花のつくりと分類', base:2.7, label:'花のつくり・分類'},
+  {topic:'小問集合', base:1.6, label:'小問集合'}
+];
+
+function topicMastery(topic){
+  const qs=QUESTIONS.filter(q=>q.topic===topic);
+  const attempted=qs.filter(q=>state.history[q.id]?.attempts>0);
+  if(!attempted.length) return 0;
+  const points=attempted.reduce((sum,q)=>{
+    const h=state.history[q.id];
+    const acc=h.correct/Math.max(1,h.attempts);
+    const exp=h.explained/Math.max(1,h.attempts);
+    return sum + acc*0.72 + Math.min(1,exp)*0.28;
+  },0);
+  return Math.round(points/attempted.length*100);
+}
+function weeklyFocus(){
+  return WEEKLY_SEED_PRIORITIES.map(p=>{
+    const qs=QUESTIONS.filter(q=>q.topic===p.topic);
+    const attempted=qs.filter(q=>state.history[q.id]?.attempts>0).length;
+    const mastery=topicMastery(p.topic);
+    const due=qs.filter(q=>{const h=state.history[q.id]; return h?.dueAt && h.dueAt<=Date.now();}).length;
+    let priority=p.base + (100-mastery)/55 + due*0.55;
+    if(attempted>=6 && mastery>=85) priority-=2.2;
+    if(attempted>=8 && mastery>=92) priority-=1.2;
+    return {...p,mastery,attempted,due,priority};
+  }).sort((a,b)=>b.priority-a.priority);
+}
+function weeklyPriorityQuestions(count){
+  const focus=weeklyFocus();
+  const picks=[];
+  let round=0;
+  while(picks.length<count && round<8){
+    for(const f of focus){
+      const pool=QUESTIONS.filter(q=>q.topic===f.topic && q.grade<=4 && q.type==='choice' && !picks.some(x=>x.id===q.id));
+      const unattempted=pool.filter(q=>!state.history[q.id]?.attempts);
+      const due=pool.filter(q=>state.history[q.id]?.dueAt && state.history[q.id].dueAt<=Date.now());
+      const pick=sample(due.length?due:(unattempted.length?unattempted:pool),1)[0];
+      if(pick) picks.push(pick);
+      if(picks.length>=count) break;
+    }
+    round++;
+  }
+  return picks;
+}
+
 function readinessText(score){
   if(state.answered<5) return 'まず5問解くと現在地が見えてきます。';
   if(score<55) return '基礎の取りこぼしを先に減らそう。難問より再現性を優先。';
@@ -116,14 +165,19 @@ function selectQuestions(mode, domain=null){
 
   if(mode==='alpha'){
     const due=sample(dueQuestions().filter(q=>q.grade<=4 && q.type==='choice'),1);
-    const weak=weakDomains()[0].domain;
-    const core=sample(pool.filter(q=>q.grade<=4 && q.level<=2 && (!state.history[q.id] || state.history[q.id].attempts<2)),2);
-    const reason=sample(pool.filter(q=>q.grade<=4 && q.level>=3 && ['資料','考察','実験'].includes(q.skill)),2);
-    const weakPick=sample(pool.filter(q=>q.grade<=4 && q.domain===weak),1);
-    const combined=uniqById([...due,...core,...reason,...weakPick]);
+    const focusPick=weeklyPriorityQuestions(2);
+    const core=sample(pool.filter(q=>q.grade<=4 && q.level<=2 && (!state.history[q.id] || state.history[q.id].attempts<2)),1);
+    const reason=sample(pool.filter(q=>q.grade<=4 && q.level>=3 && ['資料','考察','実験'].includes(q.skill)),1);
+    const combined=uniqById([...due,...focusPick,...core,...reason]);
     return uniqById([...combined,...sample(pool.filter(q=>q.grade<=4),cfg.count)]).slice(0,cfg.count);
   }
-  if(mode==='review') return sample(pool.filter(q=>q.grade<=4 && q.level<=3),cfg.count);
+  if(mode==='weekly'){
+    const due=sample(dueQuestions().filter(q=>q.grade<=4 && q.type==='choice'),2);
+    return uniqById([...due,...weeklyPriorityQuestions(cfg.count),...sample(pool.filter(q=>q.grade<=4),cfg.count)]).slice(0,cfg.count);
+  }
+  if(mode==='review'){
+    return uniqById([...weeklyPriorityQuestions(3),...sample(pool.filter(q=>q.grade<=4 && q.level<=3),cfg.count)]).slice(0,cfg.count);
+  }
   if(mode==='tsukukoma' || mode==='kaisei'){
     const adv=pool.filter(q=>q.level>=3);
     return uniqById([...sample(adv,Math.ceil(cfg.count*.7)),...sample(pool,cfg.count)]).slice(0,cfg.count);
