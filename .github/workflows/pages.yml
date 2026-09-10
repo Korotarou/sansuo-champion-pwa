@@ -266,6 +266,7 @@ jobs:
           test -f robots.txt
           test -f assets/icon.svg
           test -f .nojekyll
+          grep -q 'noindex,nofollow,noarchive,nosnippet' science/index.html || { echo "science privacy meta missing" >&2; exit 1; }
           if grep -R --exclude-dir=.git --exclude-dir=.github --exclude-dir=.parts --exclude-dir=.gzparts -n "隼" .; then
             echo "Public runtime contains a personal name" >&2
             exit 1
