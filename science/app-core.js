@@ -106,7 +106,8 @@ const WEEKLY_CANDIDATES = [
   {topic:'水溶液', base:0.5, label:'水溶液'},
   {topic:'植物', base:0.45, label:'植物'},
   {topic:'ばねとてこ', base:0.45, label:'ばね・てこ'},
-  {topic:'動物の分類と食物連鎖', base:0.35, label:'動物・食物連鎖'}
+  {topic:'動物の分類と食物連鎖', base:0.35, label:'動物・食物連鎖'},
+  {topic:'燃焼と気体', base:0.5, label:'燃焼・気体'}
 ];
 const TOPIC_QUESTION_IDS = {
   '水溶液':['c404','c405','c406','c407','x505'],
