@@ -28,7 +28,7 @@ const $ = sel => document.querySelector(sel);
 const $$ = sel => [...document.querySelectorAll(sel)];
 
 function defaultState(){
-  return {version:APP_VERSION, answered:0, correct:0, explained:0, sessions:0, streak:0, lastStudy:null, history:{}, causes:{knowledge:0,principle:0,reading:0,strategy:0,calc:0,careless:0}, daily:{date:null,count:0}};
+  return {version:APP_VERSION, answered:0, correct:0, explained:0, sessions:0, streak:0, lastStudy:null, history:{}, causes:{knowledge:0,principle:0,reading:0,strategy:0,calc:0,careless:0}, daily:{date:null,count:0}, sapixSections:[]};
 }
 function loadState(){
   try { return {...defaultState(), ...(JSON.parse(localStorage.getItem(STORE_KEY)) || {})}; }
@@ -99,14 +99,28 @@ function readiness(){
   const reviewFactor=Math.max(0,1-Math.min(1,due/10));
   return Math.round(Math.min(100,(acc*.45+exp*.25+adv*.20+reviewFactor*.10)*100));
 }
-const WEEKLY_SEED_PRIORITIES = [
+const WEEKLY_CANDIDATES = [
   {topic:'星の動き', base:3.0, label:'星の動き'},
   {topic:'花のつくりと分類', base:2.7, label:'花のつくり・分類'},
-  {topic:'小問集合', base:1.6, label:'小問集合'}
+  {topic:'小問集合', base:1.6, label:'小問集合'},
+  {topic:'水溶液', base:0.5, label:'水溶液'},
+  {topic:'植物', base:0.45, label:'植物'},
+  {topic:'ばねとてこ', base:0.45, label:'ばね・てこ'},
+  {topic:'動物の分類と食物連鎖', base:0.35, label:'動物・食物連鎖'}
 ];
+const TOPIC_QUESTION_IDS = {
+  '水溶液':['c404','c405','c406','c407','x505'],
+  '植物':['b403','b404','b405','b406','b409','x504','x507'],
+  'ばねとてこ':['p407','p408','x501'],
+  '動物の分類と食物連鎖':['b401','b402','b407','b408','b410']
+};
 
+function topicQuestionPool(topic){
+  const ids=TOPIC_QUESTION_IDS[topic]||[];
+  return QUESTIONS.filter(q=>q.topic===topic || ids.includes(q.id));
+}
 function topicMastery(topic){
-  const qs=QUESTIONS.filter(q=>q.topic===topic);
+  const qs=topicQuestionPool(topic);
   const attempted=qs.filter(q=>state.history[q.id]?.attempts>0);
   if(!attempted.length) return 0;
   const points=attempted.reduce((sum,q)=>{
@@ -117,25 +131,43 @@ function topicMastery(topic){
   },0);
   return Math.round(points/attempted.length*100);
 }
+function sapixSignal(topic){
+  const records=(state.sapixSections||[]).filter(r=>r.topic===topic && Number(r.max)>0)
+    .sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).slice(0,3);
+  if(!records.length) return {boost:0,lastRate:null,count:0};
+  let boost=0;
+  records.forEach((r,i)=>{
+    const rate=Number(r.score)/Number(r.max)*100;
+    const weight=i===0?1:(i===1?.65:.4);
+    boost += Math.max(0,(75-rate)/18)*weight;
+    if(r.average!==null && r.average!=='' && Number.isFinite(Number(r.average))){
+      const avgRate=Number(r.average)/Number(r.max)*100;
+      boost += Math.max(0,(avgRate-rate)/15)*weight;
+    }
+  });
+  const last=records[0];
+  return {boost,lastRate:Math.round(Number(last.score)/Number(last.max)*100),count:records.length};
+}
 function weeklyFocus(){
-  return WEEKLY_SEED_PRIORITIES.map(p=>{
-    const qs=QUESTIONS.filter(q=>q.topic===p.topic);
+  return WEEKLY_CANDIDATES.map(p=>{
+    const qs=topicQuestionPool(p.topic);
     const attempted=qs.filter(q=>state.history[q.id]?.attempts>0).length;
     const mastery=topicMastery(p.topic);
     const due=qs.filter(q=>{const h=state.history[q.id]; return h?.dueAt && h.dueAt<=Date.now();}).length;
-    let priority=p.base + (100-mastery)/55 + due*0.55;
+    const signal=sapixSignal(p.topic);
+    let priority=p.base + (100-mastery)/65 + due*0.5 + signal.boost;
     if(attempted>=6 && mastery>=85) priority-=2.2;
     if(attempted>=8 && mastery>=92) priority-=1.2;
-    return {...p,mastery,attempted,due,priority};
-  }).sort((a,b)=>b.priority-a.priority);
+    return {...p,mastery,attempted,due,priority,sapixRate:signal.lastRate,sapixCount:signal.count};
+  }).filter(p=>topicQuestionPool(p.topic).length>0).sort((a,b)=>b.priority-a.priority);
 }
 function weeklyPriorityQuestions(count){
-  const focus=weeklyFocus();
+  const focus=weeklyFocus().slice(0,3);
   const picks=[];
   let round=0;
-  while(picks.length<count && round<8){
+  while(picks.length<count && round<10){
     for(const f of focus){
-      const pool=QUESTIONS.filter(q=>q.topic===f.topic && q.grade<=4 && q.type==='choice' && !picks.some(x=>x.id===q.id));
+      const pool=topicQuestionPool(f.topic).filter(q=>q.grade<=4 && q.type==='choice' && !picks.some(x=>x.id===q.id));
       const unattempted=pool.filter(q=>!state.history[q.id]?.attempts);
       const due=pool.filter(q=>state.history[q.id]?.dueAt && state.history[q.id].dueAt<=Date.now());
       const pick=sample(due.length?due:(unattempted.length?unattempted:pool),1)[0];
@@ -146,7 +178,6 @@ function weeklyPriorityQuestions(count){
   }
   return picks;
 }
-
 function readinessText(score){
   if(state.answered<5) return 'まず5問解くと現在地が見えてきます。';
   if(score<55) return '基礎の取りこぼしを先に減らそう。難問より再現性を優先。';
