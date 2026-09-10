@@ -213,6 +213,27 @@
           <div class="section-heading"><div><p class="eyebrow">REVIEW QUEUE</p><h3>AIなし再テスト候補</h3></div></div>
           <div id="reviewQueue" class="review-queue"></div>
         </div>
+        <div class="record-panel">
+          <div class="section-heading"><div><p class="eyebrow">SAPIX LOCAL INPUT</p><h3>SAPIX結果を反映</h3></div><span class="local-only">この端末内のみ</span></div>
+          <p class="sapix-help">設問別ではなく、成績表の「分野」1行を入力します。入力後、今週の重点順位が自動で変わります。</p>
+          <div class="sapix-entry-grid">
+            <label><span>実施日</span><input id="sapixDate" type="date"></label>
+            <label><span>分野</span><select id="sapixTopic">
+              <option value="星の動き">星の動き</option>
+              <option value="花のつくりと分類">花のつくりと分類</option>
+              <option value="小問集合">小問集合</option>
+              <option value="水溶液">水溶液</option>
+              <option value="植物">植物</option>
+              <option value="ばねとてこ">ばねとてこ</option>
+              <option value="動物の分類と食物連鎖">動物の分類と食物連鎖</option>
+            </select></label>
+            <label><span>得点</span><input id="sapixScore" type="number" min="0" step="1" inputmode="numeric" placeholder="例 10"></label>
+            <label><span>配点</span><input id="sapixMax" type="number" min="1" step="1" inputmode="numeric" placeholder="例 24"></label>
+            <label><span>平均点（任意）</span><input id="sapixAverage" type="number" min="0" step="0.1" inputmode="decimal" placeholder="例 15.0"></label>
+            <button id="sapixSaveBtn" class="primary-btn sapix-save">重点へ反映</button>
+          </div>
+          <div id="sapixHistory" class="sapix-history"></div>
+        </div>
         <div class="record-panel backup-panel">
           <div><h3>データ保護</h3><p>学習記録はこのiPad内に保存されます。機種変更前にバックアップしてください。</p></div>
           <div class="backup-actions"><button id="exportBtn" class="secondary-btn">記録を書き出す</button><label class="secondary-btn file-label">記録を読み込む<input id="importInput" type="file" accept="application/json" hidden></label></div>
