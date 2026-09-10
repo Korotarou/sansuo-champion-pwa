@@ -100,14 +100,14 @@ function readiness(){
   return Math.round(Math.min(100,(acc*.45+exp*.25+adv*.20+reviewFactor*.10)*100));
 }
 const WEEKLY_CANDIDATES = [
-  {topic:'星の動き', base:3.0, label:'星の動き'},
-  {topic:'花のつくりと分類', base:2.7, label:'花のつくり・分類'},
-  {topic:'小問集合', base:1.6, label:'小問集合'},
-  {topic:'水溶液', base:0.5, label:'水溶液'},
-  {topic:'植物', base:0.45, label:'植物'},
-  {topic:'ばねとてこ', base:0.45, label:'ばね・てこ'},
-  {topic:'動物の分類と食物連鎖', base:0.35, label:'動物・食物連鎖'},
-  {topic:'燃焼と気体', base:0.5, label:'燃焼・気体'}
+  {topic:'星の動き', base:3.0, label:'星の動き', domain:'地学'},
+  {topic:'花のつくりと分類', base:2.7, label:'花のつくり・分類', domain:'生物'},
+  {topic:'小問集合', base:1.6, label:'小問集合', domain:'総合'},
+  {topic:'水溶液', base:0.5, label:'水溶液', domain:'化学'},
+  {topic:'植物', base:0.45, label:'植物', domain:'生物'},
+  {topic:'ばねとてこ', base:0.45, label:'ばね・てこ', domain:'物理'},
+  {topic:'動物の分類と食物連鎖', base:0.35, label:'動物・食物連鎖', domain:'生物'},
+  {topic:'燃焼と気体', base:0.5, label:'燃焼・気体', domain:'化学'}
 ];
 const TOPIC_QUESTION_IDS = {
   '水溶液':['c404','c405','c406','c407','x505'],
