@@ -5,8 +5,18 @@
   const PDFJS_URL='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+PDFJS_VERSION+'/pdf.min.mjs';
   const PDFJS_WORKER_URL='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+PDFJS_VERSION+'/pdf.worker.min.mjs';
 
-  function normalizeText(s){
+  function stripMarkup(s){
     return String(s||'')
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,' ')
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi,' ')
+      .replace(/<[^>]+>/g,' ')
+      .replace(/&nbsp;|&#160;/gi,' ')
+      .replace(/&amp;/gi,'&')
+      .replace(/&lt;/gi,'<')
+      .replace(/&gt;/gi,'>');
+  }
+  function normalizeText(s){
+    return stripMarkup(s)
       .replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0))
       .replace(/[Ａ-Ｚａ-ｚ]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0))
       .replace(/[－―−]/g,'-')
