@@ -182,7 +182,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for f in science/questions-{1..7}.js science/app-core.js science/app-quiz.js science/app-results.js science/app-boot.js; do
+          for f in science/questions-{1..8}.js science/sapix-import.js science/app-core.js science/app-quiz.js science/app-results.js science/app-boot.js; do
             node --check "$f"
           done
           node <<'NODE'
@@ -194,9 +194,9 @@ jobs:
             document:{querySelector:()=>null,querySelectorAll:()=>[]}
           };
           vm.createContext(context);
-          for(let i=1;i<=7;i++) vm.runInContext(fs.readFileSync('science/questions-'+i+'.js','utf8'),context);
+          for(let i=1;i<=8;i++) vm.runInContext(fs.readFileSync('science/questions-'+i+'.js','utf8'),context);
           const qs=context.window.HAYABUSA_SCIENCE_QUESTIONS||[];
-          if(qs.length!==82) throw new Error('science question count: '+qs.length);
+          if(qs.length!==100) throw new Error('science question count: '+qs.length);
           const ids=qs.map(q=>q.id);
           if(new Set(ids).size!==ids.length) throw new Error('duplicate science question id');
           for(const q of qs){
@@ -215,10 +215,33 @@ jobs:
           if(!adaptive.length || adaptive[0].topic!=='水溶液') throw new Error('SAPIX adaptive priority failed');
           const html=fs.readFileSync('science/index.html','utf8');
           const sw=fs.readFileSync('science/sw.js','utf8');
-          for(const name of ['questions-7.js','app-core.js','app-quiz.js','app-results.js','app-boot.js']){
+          for(const name of ['questions-7.js','questions-8.js','sapix-import.js','app-core.js','app-quiz.js','app-results.js','app-boot.js']){
             if(!html.includes(name)) throw new Error('science html missing '+name);
             if(!sw.includes('./'+name)) throw new Error('science cache missing '+name);
           }
+          vm.runInContext(fs.readFileSync('science/sapix-import.js','utf8'),context);
+          const fixture=[
+            '分野 得点/配点 平均点',
+            '1 小問集合 35 / 35 27.9',
+            '2 角度 18 / 30 17.8',
+            '3 数列・規則性 18 / 23 13.4',
+            '4 文章題 24 / 24 13.8',
+            '5 規則性 6 / 18 5.5',
+            '6 およその数 13 / 20 4.3',
+            '1 漢字の読み書き 12 / 20 12.8',
+            '2 知識総合 14 / 20 13.9',
+            '3 説明文の読解 22 / 55 24.4',
+            '4 物語文の読解 26 / 55 26.8',
+            '1 小問集合 18 / 30 17.9',
+            '2 ろうそくの燃焼 13 / 20 10.2',
+            '3 気体の性質 16 / 20 13.8',
+            '4 天体 17 / 30 13.2',
+            '1 国土や気候に関する問題 39 / 55 28.5',
+            '2 地形図や食べ物に関する問題 33 / 45 28.0'
+          ].join(' ');
+          const parsed=vm.runInContext('ScienceSapixImport.analyzeText('+JSON.stringify(fixture)+')',context);
+          if(parsed.parseQuality.scienceTotal!==100 || parsed.sections.length!==4) throw new Error('science SAPIX PDF parser fixture failed');
+          if(parsed.sections[1].topic!=='燃焼と気体' || parsed.sections[3].topic!=='星の動き') throw new Error('science SAPIX topic mapping failed');
           console.log('Science PWA integrity PASS: '+qs.length+' questions');
           NODE
 
