@@ -178,6 +178,47 @@ jobs:
           console.log('Alpha1 planner PASS');
           NODE
 
+      - name: Science PWA integrity test
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in science/questions-{1..7}.js science/app-core.js science/app-quiz.js science/app-results.js science/app-boot.js; do
+            node --check "$f"
+          done
+          node <<'NODE'
+          const fs=require('fs');
+          const vm=require('vm');
+          const context={
+            window:{},
+            localStorage:{getItem:()=>null,setItem:()=>{}},
+            document:{querySelector:()=>null,querySelectorAll:()=>[]}
+          };
+          vm.createContext(context);
+          for(let i=1;i<=7;i++) vm.runInContext(fs.readFileSync('science/questions-'+i+'.js','utf8'),context);
+          const qs=context.window.HAYABUSA_SCIENCE_QUESTIONS||[];
+          if(qs.length!==82) throw new Error('science question count: '+qs.length);
+          const ids=qs.map(q=>q.id);
+          if(new Set(ids).size!==ids.length) throw new Error('duplicate science question id');
+          for(const q of qs){
+            if(!q.id||!q.domain||!q.level||!q.skill||!q.type||!q.prompt) throw new Error('missing field: '+(q.id||'unknown'));
+            if(q.type==='choice'&&(!Array.isArray(q.choices)||q.answer<0||q.answer>=q.choices.length)) throw new Error('invalid choice answer: '+q.id);
+          }
+          vm.runInContext(fs.readFileSync('science/app-core.js','utf8'),context);
+          const focus=vm.runInContext('weeklyFocus()',context);
+          const weekly=vm.runInContext('weeklyPriorityQuestions(7)',context);
+          const alpha=vm.runInContext('selectQuestions("alpha")',context);
+          if(focus.length<3) throw new Error('weekly focus generation failed');
+          if(weekly.length!==7) throw new Error('weekly set generation failed: '+weekly.length);
+          if(alpha.length!==5) throw new Error('alpha set generation failed: '+alpha.length);
+          const html=fs.readFileSync('science/index.html','utf8');
+          const sw=fs.readFileSync('science/sw.js','utf8');
+          for(const name of ['questions-7.js','app-core.js','app-quiz.js','app-results.js','app-boot.js']){
+            if(!html.includes(name)) throw new Error('science html missing '+name);
+            if(!sw.includes('./'+name)) throw new Error('science cache missing '+name);
+          }
+          console.log('Science PWA integrity PASS: '+qs.length+' questions');
+          NODE
+
       - name: Verify PWA structure and privacy
         shell: bash
         run: |
