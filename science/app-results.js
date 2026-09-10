@@ -93,6 +93,24 @@ function renderHome(){
 function renderLibrary(){
   $('#bioMastery').textContent=`${domainMastery('生物')}%`; $('#earthMastery').textContent=`${domainMastery('地学')}%`;
   $('#physicsMastery').textContent=`${domainMastery('物理')}%`; $('#chemMastery').textContent=`${domainMastery('化学')}%`;
+  const map=$('#topicMap');
+  if(map){
+    const order={生物:1,化学:2,物理:3,地学:4,総合:5};
+    const topics=WEEKLY_CANDIDATES.slice().sort((a,b)=>(order[a.domain]||9)-(order[b.domain]||9) || a.label.localeCompare(b.label,'ja'));
+    map.innerHTML=topics.map(p=>{
+      const mastery=topicMastery(p.topic);
+      const signal=sapixSignal(p.topic);
+      const count=topicQuestionPool(p.topic).filter(q=>q.grade<=4&&q.type==='choice').length;
+      const test=signal.lastRate===null?'SAPIX未取込':`SAPIX ${signal.lastRate}%`;
+      return `<button class="topic-map-card" data-topic="${escapeHtml(p.topic)}">
+        <span class="topic-map-domain">${escapeHtml(p.domain||'総合')}</span>
+        <strong>${escapeHtml(p.label)}</strong>
+        <div class="topic-map-meter"><span style="width:${Math.max(3,mastery)}%"></span></div>
+        <div class="topic-map-meta"><span>定着 ${mastery}%</span><span>${test}</span></div>
+        <small>${count}問 →</small>
+      </button>`;
+    }).join('');
+  }
 }
 async function importSapixFile(file){
   const status=$('#sapixImportStatus');
