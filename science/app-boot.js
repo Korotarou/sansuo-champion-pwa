@@ -33,6 +33,11 @@ $('#checkBtn').addEventListener('click',checkAnswer);
 $('#nextBtn').addEventListener('click',nextQuestion);
 $('#exportBtn').addEventListener('click',exportData);
 $('#sapixSaveBtn').addEventListener('click',saveSapixSection);
+$('#sapixFileInput').addEventListener('change',async e=>{
+  const file=e.target.files?.[0];
+  if(file) await importSapixFile(file);
+  e.target.value='';
+});
 $('#importInput').addEventListener('change',e=>{ if(e.target.files?.[0]) importData(e.target.files[0]); e.target.value=''; });
 window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredPrompt=e; $('#installBtn').hidden=false; });
 $('#installBtn').addEventListener('click',async()=>{ if(!deferredPrompt){ toast('Safariでは共有 →「ホーム画面に追加」を使ってください'); return; } deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; $('#installBtn').hidden=true; });
