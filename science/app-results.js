@@ -102,8 +102,9 @@ async function importSapixFile(file){
     if(status) status.textContent='解析準備中…';
     const parsed=await window.ScienceSapixImport.analyzeFile(file,msg=>{if(status) status.textContent=msg;});
     const mapped=(parsed.sections||[]).filter(s=>s.topic);
-    if(!mapped.length) throw new Error('対応する理科分野を抽出できませんでした。');
+    if(!mapped.length && !parsed.summary) throw new Error('理科成績を抽出できませんでした。');
     if(!Array.isArray(state.sapixSections)) state.sapixSections=[];
+    if(!Array.isArray(state.sapixTests)) state.sapixTests=[];
     let added=0;
     for(const s of mapped){
       const date=parsed.date||todayKey();
@@ -117,8 +118,21 @@ async function importSapixFile(file){
       added++;
     }
     state.sapixSections=state.sapixSections.slice(0,60);
+    if(parsed.summary && Number(parsed.summary.max)>0){
+      const tdate=parsed.date||todayKey();
+      const dupTest=state.sapixTests.some(t=>t.date===tdate&&Number(t.score)===Number(parsed.summary.score)&&Number(t.max)===Number(parsed.summary.max));
+      if(!dupTest){
+        state.sapixTests.unshift({
+          id:'sapix-test-'+Date.now(),date:tdate,
+          score:Number(parsed.summary.score),max:Number(parsed.summary.max),
+          dev:Number(parsed.summary.dev),average:parsed.summary.average===null?null:Number(parsed.summary.average),
+          source:'local-file',createdAt:Date.now()
+        });
+      }
+      state.sapixTests=state.sapixTests.slice(0,20);
+    }
     saveState(); renderRecord(); renderHome();
-    if(status) status.textContent=added?('理科 '+mapped.length+'分野を反映'):'同じ結果は登録済み';
+    if(status) status.textContent=added?('理科 '+mapped.length+'分野＋総合成績を反映'):(parsed.summary?'総合成績を反映':'同じ結果は登録済み');
     toast(added?('SAPIX理科 '+added+'分野を反映しました'):'この成績票は登録済みです');
   }catch(err){
     if(status) status.textContent=String(err?.message||err);
@@ -152,6 +166,23 @@ function deleteSapixSection(id){
   state.sapixSections=(state.sapixSections||[]).filter(r=>r.id!==id);
   saveState(); renderRecord(); renderHome(); toast('入力を削除しました');
 }
+function renderSapixTrend(){
+  const box=$('#sapixTrend'); if(!box) return;
+  const rows=(state.sapixTests||[]).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))).slice(0,6);
+  if(!rows.length){ box.innerHTML='<div class="empty">PDFを取り込むと、理科の得点・偏差値・平均点の推移がここに表示されます。</div>'; return; }
+  box.innerHTML=rows.map((r,i)=>{
+    const next=rows[i+1];
+    const delta=next&&Number.isFinite(r.dev)&&Number.isFinite(next.dev)?Math.round((r.dev-next.dev)*10)/10:null;
+    const deltaText=delta===null?'':(delta>0?'▲ '+delta:(delta<0?'▼ '+Math.abs(delta):'±0'));
+    const avg=r.average===null||!Number.isFinite(Number(r.average))?'—':Number(r.average).toFixed(1);
+    return '<div class="sapix-trend-card">'+
+      '<span class="sapix-trend-date">'+escapeHtml(r.date||'')+'</span>'+
+      '<strong>'+r.score+'<small>/'+r.max+'</small></strong>'+
+      '<div><span>偏差値</span><b>'+Number(r.dev).toFixed(1)+'</b><em>'+deltaText+'</em></div>'+
+      '<div><span>平均点</span><b>'+avg+'</b></div>'+
+    '</div>';
+  }).join('');
+}
 function renderSapixHistory(){
   const box=$('#sapixHistory'); if(!box) return;
   const rows=(state.sapixSections||[]).slice(0,10);
@@ -174,5 +205,6 @@ function renderRecord(){
   const totalCauses=Math.max(1,Object.values(state.causes).reduce((a,b)=>a+b,0));
   $('#causeBars').innerHTML=Object.entries(state.causes).map(([k,v])=>`<div class="cause-row"><span>${causeLabel(k)}</span><div class="cause-track"><div class="cause-fill" style="width:${v/totalCauses*100}%"></div></div><strong>${v}</strong></div>`).join('');
   $('#reviewQueue').innerHTML=due.length?due.slice(0,8).map(q=>`<div class="review-item"><span class="dot"></span><p>${escapeHtml(q.prompt)}</p><small>${q.domain}</small></div>`).join(''):'<div class="empty">今すぐ再テストする問題はありません。</div>';
+  renderSapixTrend();
   renderSapixHistory();
 }
