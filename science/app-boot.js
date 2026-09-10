@@ -20,6 +20,7 @@ function toast(msg){
   const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._timer); t._timer=setTimeout(()=>t.classList.remove('show'),2200);
 }
 addEventListener('click', e=>{
+  const sapixDelete=e.target.closest('[data-sapix-delete]'); if(sapixDelete){ deleteSapixSection(sapixDelete.dataset.sapixDelete); return; }
   const view=e.target.closest('[data-view]'); if(view){ showView(view.dataset.view); return; }
   const start=e.target.closest('[data-start]'); if(start){ startMode(start.dataset.start); return; }
   const choice=e.target.closest('[data-choice]'); if(choice){ selectChoice(Number(choice.dataset.choice)); return; }
@@ -31,8 +32,9 @@ $('#hintBtn').addEventListener('click',showHint);
 $('#checkBtn').addEventListener('click',checkAnswer);
 $('#nextBtn').addEventListener('click',nextQuestion);
 $('#exportBtn').addEventListener('click',exportData);
+$('#sapixSaveBtn').addEventListener('click',saveSapixSection);
 $('#importInput').addEventListener('change',e=>{ if(e.target.files?.[0]) importData(e.target.files[0]); e.target.value=''; });
 window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredPrompt=e; $('#installBtn').hidden=false; });
 $('#installBtn').addEventListener('click',async()=>{ if(!deferredPrompt){ toast('Safariでは共有 →「ホーム画面に追加」を使ってください'); return; } deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; $('#installBtn').hidden=true; });
 if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
-normalizeDaily(); renderHome(); renderLibrary();
+normalizeDaily(); if($('#sapixDate')) $('#sapixDate').value=todayKey(); renderHome(); renderLibrary();
