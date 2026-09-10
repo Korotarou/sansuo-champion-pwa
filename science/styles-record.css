@@ -70,3 +70,10 @@
   .sapix-history-score { grid-column:1; text-align:left; }
   .sapix-history-row button { grid-column:2; grid-row:1 / span 2; }
 }
+
+.sapix-import-row { display:flex; align-items:center; gap:10px; margin:4px 0 14px; flex-wrap:wrap; }
+.sapix-file-label { display:inline-flex; align-items:center; justify-content:center; }
+.sapix-import-status { color:var(--muted); font-size:11px; line-height:1.5; }
+.sapix-manual { border-top:1px solid var(--line); padding-top:12px; }
+.sapix-manual summary { cursor:pointer; font-size:12px; font-weight:900; color:var(--ink); margin-bottom:12px; }
+.sapix-manual[open] summary { margin-bottom:14px; }
