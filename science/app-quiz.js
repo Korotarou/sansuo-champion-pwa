@@ -23,6 +23,21 @@ function startMode(mode, domain=null){
   startTimer();
 }
 
+function startTopic(topic){
+  const pool=topicQuestionPool(topic).filter(q=>q.grade<=4 && q.type==='choice');
+  const qs=sample(pool,Math.min(8,pool.length));
+  if(!qs.length){ toast('この単元の問題はまだありません'); return; }
+  const cfg={label:topic+'トレーニング',count:qs.length,time:null};
+  session={mode:'topic',domain:null,topic,cfg,questions:qs,index:0,answers:[],correct:0,explained:0,needsReview:0,startedAt:Date.now(),remaining:null,lockedFeedback:false,selected:null,hintIndex:0,answeredCurrent:false};
+  $('#quizModeLabel').textContent=topic+'｜単元別';
+  $('#quizTimer').hidden=true;
+  $('#hintBtn').hidden=false;
+  $('#checkBtn').textContent='答え合わせ';
+  showView('quiz');
+  renderQuestion();
+  startTimer();
+}
+
 function startTimer(){
   clearInterval(timerHandle);
   if(!session?.cfg.time) return;
