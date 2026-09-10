@@ -22,6 +22,13 @@
     const m=normalizeText(text).match(/(20\d{2})年\s*(\d{1,2})月\s*(\d{1,2})日/);
     return m?isoDate(m[1],m[2],m[3]):'';
   }
+  function parseScienceSummary(text){
+    const n=normalizeText(text);
+    let m=n.match(/理\s*科\s+(\d{1,3})\s*\/\s*(\d{1,3})\s+(\d{2}(?:\.\d+)?)\s+\d+\s*\/\s*\d+\s+(\d{1,3}(?:\.\d+)?)/);
+    if(m) return {score:Number(m[1]),max:Number(m[2]),dev:Number(m[3]),average:Number(m[4])};
+    m=n.match(/理\s*科\s+(\d{1,3})\s*\/\s*(\d{1,3})\s+(\d{2}(?:\.\d+)?)/);
+    return m?{score:Number(m[1]),max:Number(m[2]),dev:Number(m[3]),average:null}:null;
+  }
   function mapTopic(name){
     const n=String(name||'').replace(/\s+/g,'');
     if(/星|天体/.test(n)) return '星の動き';
@@ -84,6 +91,7 @@
       schema:1,
       source:'sapix-local-file',
       date:parseDate(all),
+      summary:parseScienceSummary(all),
       sections:sections.map(r=>({
         rawName:r.name,
         topic:mapTopic(r.name),
