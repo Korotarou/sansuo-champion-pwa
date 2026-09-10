@@ -210,6 +210,9 @@ jobs:
           if(focus.length<3) throw new Error('weekly focus generation failed');
           if(weekly.length!==7) throw new Error('weekly set generation failed: '+weekly.length);
           if(alpha.length!==5) throw new Error('alpha set generation failed: '+alpha.length);
+          vm.runInContext("state.sapixSections.push({date:'2099-01-01',topic:'水溶液',score:1,max:40,average:25})",context);
+          const adaptive=vm.runInContext('weeklyFocus()',context);
+          if(!adaptive.length || adaptive[0].topic!=='水溶液') throw new Error('SAPIX adaptive priority failed');
           const html=fs.readFileSync('science/index.html','utf8');
           const sw=fs.readFileSync('science/sw.js','utf8');
           for(const name of ['questions-7.js','app-core.js','app-quiz.js','app-results.js','app-boot.js']){
