@@ -28,7 +28,7 @@ const $ = sel => document.querySelector(sel);
 const $$ = sel => [...document.querySelectorAll(sel)];
 
 function defaultState(){
-  return {version:APP_VERSION, answered:0, correct:0, explained:0, sessions:0, streak:0, lastStudy:null, history:{}, causes:{knowledge:0,principle:0,reading:0,strategy:0,calc:0,careless:0}, daily:{date:null,count:0}, sapixSections:[]};
+  return {version:APP_VERSION, answered:0, correct:0, explained:0, sessions:0, streak:0, lastStudy:null, history:{}, causes:{knowledge:0,principle:0,reading:0,strategy:0,calc:0,careless:0}, daily:{date:null,count:0}, sapixSections:[], sapixTests:[]};
 }
 function loadState(){
   try { return {...defaultState(), ...(JSON.parse(localStorage.getItem(STORE_KEY)) || {})}; }
