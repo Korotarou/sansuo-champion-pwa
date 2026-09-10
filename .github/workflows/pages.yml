@@ -239,7 +239,7 @@ jobs:
             '1 国土や気候に関する問題 39 / 55 28.5',
             '2 地形図や食べ物に関する問題 33 / 45 28.0'
           ].join(' ');
-          const parsed=vm.runInContext('ScienceSapixImport.analyzeText('+JSON.stringify(fixture)+')',context);
+          const parsed=vm.runInContext('window.ScienceSapixImport.analyzeText('+JSON.stringify(fixture)+')',context);
           if(parsed.parseQuality.scienceTotal!==100 || parsed.sections.length!==4) throw new Error('science SAPIX PDF parser fixture failed');
           if(parsed.sections[1].topic!=='燃焼と気体' || parsed.sections[3].topic!=='星の動き') throw new Error('science SAPIX topic mapping failed');
           console.log('Science PWA integrity PASS: '+qs.length+' questions');
