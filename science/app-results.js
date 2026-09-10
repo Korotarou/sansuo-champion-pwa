@@ -74,9 +74,9 @@ function renderHome(){
   $('#streakCount').textContent=state.streak||0; $('#todayProgress').textContent=`${Math.min(5,state.daily.count)} / 5`;
   const list=$('#weeklyFocusList');
   if(list){
-    const focus=weeklyFocus();
+    const focus=weeklyFocus().slice(0,3);
     list.innerHTML=focus.map(function(f,i){
-      const meta=f.due ? ('再テスト '+f.due+'問') : ('回答 '+f.attempted+'問');
+      const meta=f.sapixRate!==null ? ('SAPIX '+f.sapixRate+'%') : (f.due ? ('再テスト '+f.due+'問') : ('回答 '+f.attempted+'問'));
       return '<div class="weekly-focus-item">'+
         '<div class="weekly-focus-top">'+
           '<span class="weekly-focus-rank">'+(i+1)+'</span>'+
@@ -94,6 +94,47 @@ function renderLibrary(){
   $('#bioMastery').textContent=`${domainMastery('生物')}%`; $('#earthMastery').textContent=`${domainMastery('地学')}%`;
   $('#physicsMastery').textContent=`${domainMastery('物理')}%`; $('#chemMastery').textContent=`${domainMastery('化学')}%`;
 }
+function saveSapixSection(){
+  const date=$('#sapixDate')?.value || todayKey();
+  const topic=$('#sapixTopic')?.value || '';
+  const score=Number($('#sapixScore')?.value);
+  const max=Number($('#sapixMax')?.value);
+  const averageRaw=$('#sapixAverage')?.value;
+  const average=averageRaw===''?null:Number(averageRaw);
+  if(!topic || !Number.isFinite(score) || !Number.isFinite(max) || max<=0 || score<0 || score>max){
+    toast('得点と配点を確認してください'); return false;
+  }
+  if(average!==null && (!Number.isFinite(average) || average<0 || average>max)){
+    toast('平均点を確認してください'); return false;
+  }
+  if(!Array.isArray(state.sapixSections)) state.sapixSections=[];
+  state.sapixSections.unshift({id:'sapix-'+Date.now(),date,topic,score,max,average,createdAt:Date.now()});
+  state.sapixSections=state.sapixSections.slice(0,40);
+  saveState();
+  if($('#sapixScore')) $('#sapixScore').value='';
+  if($('#sapixMax')) $('#sapixMax').value='';
+  if($('#sapixAverage')) $('#sapixAverage').value='';
+  renderRecord(); renderHome(); toast('SAPIX結果を重点順位へ反映しました');
+  return true;
+}
+function deleteSapixSection(id){
+  state.sapixSections=(state.sapixSections||[]).filter(r=>r.id!==id);
+  saveState(); renderRecord(); renderHome(); toast('入力を削除しました');
+}
+function renderSapixHistory(){
+  const box=$('#sapixHistory'); if(!box) return;
+  const rows=(state.sapixSections||[]).slice(0,10);
+  if(!rows.length){ box.innerHTML='<div class="empty">まだ入力はありません。次回の成績表から分野ごとに反映できます。</div>'; return; }
+  box.innerHTML=rows.map(r=>{
+    const rate=Math.round(r.score/r.max*100);
+    const avg=r.average===null?'':('・平均 '+r.average+'/'+r.max);
+    return '<div class="sapix-history-row">'+
+      '<div><strong>'+escapeHtml(r.topic)+'</strong><span>'+escapeHtml(r.date)+'</span></div>'+
+      '<div class="sapix-history-score">'+r.score+'/'+r.max+' <b>'+rate+'%</b><small>'+avg+'</small></div>'+
+      '<button data-sapix-delete="'+escapeHtml(r.id)+'" aria-label="入力を削除">×</button>'+
+    '</div>';
+  }).join('');
+}
 function renderRecord(){
   $('#statAnswered').textContent=state.answered;
   $('#statAccuracy').textContent=`${state.answered?Math.round(state.correct/state.answered*100):0}%`;
@@ -102,4 +143,5 @@ function renderRecord(){
   const totalCauses=Math.max(1,Object.values(state.causes).reduce((a,b)=>a+b,0));
   $('#causeBars').innerHTML=Object.entries(state.causes).map(([k,v])=>`<div class="cause-row"><span>${causeLabel(k)}</span><div class="cause-track"><div class="cause-fill" style="width:${v/totalCauses*100}%"></div></div><strong>${v}</strong></div>`).join('');
   $('#reviewQueue').innerHTML=due.length?due.slice(0,8).map(q=>`<div class="review-item"><span class="dot"></span><p>${escapeHtml(q.prompt)}</p><small>${q.domain}</small></div>`).join(''):'<div class="empty">今すぐ再テストする問題はありません。</div>';
+  renderSapixHistory();
 }
