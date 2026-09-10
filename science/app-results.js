@@ -94,6 +94,37 @@ function renderLibrary(){
   $('#bioMastery').textContent=`${domainMastery('生物')}%`; $('#earthMastery').textContent=`${domainMastery('地学')}%`;
   $('#physicsMastery').textContent=`${domainMastery('物理')}%`; $('#chemMastery').textContent=`${domainMastery('化学')}%`;
 }
+async function importSapixFile(file){
+  const status=$('#sapixImportStatus');
+  if(!file) return;
+  if(!window.ScienceSapixImport){ if(status) status.textContent='解析器を読み込めません'; return; }
+  try{
+    if(status) status.textContent='解析準備中…';
+    const parsed=await window.ScienceSapixImport.analyzeFile(file,msg=>{if(status) status.textContent=msg;});
+    const mapped=(parsed.sections||[]).filter(s=>s.topic);
+    if(!mapped.length) throw new Error('対応する理科分野を抽出できませんでした。');
+    if(!Array.isArray(state.sapixSections)) state.sapixSections=[];
+    let added=0;
+    for(const s of mapped){
+      const date=parsed.date||todayKey();
+      const duplicate=state.sapixSections.some(r=>r.date===date&&r.topic===s.topic&&Number(r.score)===Number(s.score)&&Number(r.max)===Number(s.max));
+      if(duplicate) continue;
+      state.sapixSections.unshift({
+        id:'sapix-'+Date.now()+'-'+added,
+        date,topic:s.topic,score:s.score,max:s.max,average:s.average,
+        rawName:s.rawName||s.topic,source:'local-file',createdAt:Date.now()
+      });
+      added++;
+    }
+    state.sapixSections=state.sapixSections.slice(0,60);
+    saveState(); renderRecord(); renderHome();
+    if(status) status.textContent=added?('理科 '+mapped.length+'分野を反映'):'同じ結果は登録済み';
+    toast(added?('SAPIX理科 '+added+'分野を反映しました'):'この成績票は登録済みです');
+  }catch(err){
+    if(status) status.textContent=String(err?.message||err);
+    toast('自動取込できませんでした。手入力を利用してください');
+  }
+}
 function saveSapixSection(){
   const date=$('#sapixDate')?.value || todayKey();
   const topic=$('#sapixTopic')?.value || '';
