@@ -26,6 +26,7 @@ addEventListener('click', e=>{
   const choice=e.target.closest('[data-choice]'); if(choice){ selectChoice(Number(choice.dataset.choice)); return; }
   const reason=e.target.closest('[data-reason]'); if(reason){ markReason(reason.dataset.reason); return; }
   const cause=e.target.closest('[data-cause]'); if(cause){ markCause(cause.dataset.cause); return; }
+  const topic=e.target.closest('[data-topic]'); if(topic){ startTopic(topic.dataset.topic); return; }
   const domain=e.target.closest('[data-domain]'); if(domain){ startMode('domain',domain.dataset.domain); return; }
 });
 $('#hintBtn').addEventListener('click',showHint);
