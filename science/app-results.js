@@ -119,7 +119,21 @@ async function importSapixFile(file){
   try{
     if(status) status.textContent='解析準備中…';
     const parsed=await window.ScienceSapixImport.analyzeFile(file,msg=>{if(status) status.textContent=msg;});
-    const mapped=(parsed.sections||[]).filter(s=>s.topic);
+    const rawMapped=(parsed.sections||[]).filter(s=>s.topic);
+    const grouped=new Map();
+    for(const s of rawMapped){
+      const cur=grouped.get(s.topic)||{topic:s.topic,score:0,max:0,average:0,hasAverage:true,names:[]};
+      cur.score+=Number(s.score)||0;
+      cur.max+=Number(s.max)||0;
+      if(s.average===null || !Number.isFinite(Number(s.average))) cur.hasAverage=false;
+      else cur.average+=Number(s.average);
+      if(s.rawName) cur.names.push(s.rawName);
+      grouped.set(s.topic,cur);
+    }
+    const mapped=[...grouped.values()].map(g=>({
+      topic:g.topic,score:g.score,max:g.max,average:g.hasAverage?g.average:null,
+      rawName:g.names.join('・')
+    }));
     if(!mapped.length && !parsed.summary) throw new Error('理科成績を抽出できませんでした。');
     if(!Array.isArray(state.sapixSections)) state.sapixSections=[];
     if(!Array.isArray(state.sapixTests)) state.sapixTests=[];
