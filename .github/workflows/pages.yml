@@ -221,6 +221,8 @@ jobs:
           }
           vm.runInContext(fs.readFileSync('science/sapix-import.js','utf8'),context);
           const fixture=[
+            '2026年5月7日 実施',
+            '理 科 64 / 100 54.9 2012 / 5913 55.0 1189 / 3266',
             '分野 得点/配点 平均点',
             '1 小問集合 35 / 35 27.9',
             '2 角度 18 / 30 17.8',
@@ -242,6 +244,12 @@ jobs:
           const parsed=vm.runInContext('window.ScienceSapixImport.analyzeText('+JSON.stringify(fixture)+')',context);
           if(parsed.parseQuality.scienceTotal!==100 || parsed.sections.length!==4) throw new Error('science SAPIX PDF parser fixture failed');
           if(parsed.sections[1].topic!=='燃焼と気体' || parsed.sections[3].topic!=='星の動き') throw new Error('science SAPIX topic mapping failed');
+          if(!parsed.summary || parsed.summary.score!==64 || parsed.summary.max!==100 || parsed.summary.dev!==54.9 || parsed.summary.average!==55.0) throw new Error('science SAPIX summary parse failed');
+          if(parsed.date!=='2026-05-07') throw new Error('science SAPIX date parse failed');
+          const htmlParsed=context.window.ScienceSapixImport.analyzeText('<html><body><div>'+fixture.replace(/ /g,'</span><span>')+'</div></body></html>');
+          if(htmlParsed.parseQuality.scienceTotal!==100) throw new Error('science SAPIX HTML parse failed');
+          const pools=vm.runInContext('WEEKLY_CANDIDATES.map(p=>[p.topic,topicQuestionPool(p.topic).filter(q=>q.grade<=4&&q.type==="choice").length])',context);
+          if(pools.some(x=>x[1]<1)) throw new Error('science topic map has empty pool: '+JSON.stringify(pools));
           console.log('Science PWA integrity PASS: '+qs.length+' questions');
           NODE
 
