@@ -61,10 +61,33 @@ function finishSession(timeUp=false){
   session=null; showView('result');
 }
 function causeLabel(k){ return ({knowledge:'知らなかった',principle:'原理があいまい',reading:'資料・条件の読み違い',strategy:'知っていたが使えなかった',calc:'計算ミス',careless:'ケアレスミス'})[k]||k; }
+function focusStatus(f){
+  if(f.attempted===0) return 'これから確認';
+  if(f.mastery<60) return '要補強';
+  if(f.mastery<80) return '定着中';
+  if(f.mastery<90) return 'あと一歩';
+  return '安定';
+}
 function renderHome(){
   normalizeDaily();
   const r=readiness(); $('#readinessScore').textContent=r; $('#readinessBar').style.width=`${r}%`; $('#readinessText').textContent=readinessText(r);
   $('#streakCount').textContent=state.streak||0; $('#todayProgress').textContent=`${Math.min(5,state.daily.count)} / 5`;
+  const list=$('#weeklyFocusList');
+  if(list){
+    const focus=weeklyFocus();
+    list.innerHTML=focus.map(function(f,i){
+      const meta=f.due ? ('再テスト '+f.due+'問') : ('回答 '+f.attempted+'問');
+      return '<div class="weekly-focus-item">'+
+        '<div class="weekly-focus-top">'+
+          '<span class="weekly-focus-rank">'+(i+1)+'</span>'+
+          '<span class="weekly-focus-name">'+escapeHtml(f.label)+'</span>'+
+          '<span class="weekly-focus-status">'+focusStatus(f)+'</span>'+
+        '</div>'+
+        '<div class="weekly-focus-meter"><div class="weekly-focus-fill" style="width:'+Math.max(3,f.mastery)+'%"></div></div>'+
+        '<div class="weekly-focus-meta"><span>定着度 '+f.mastery+'%</span><span>'+meta+'</span></div>'+
+      '</div>';
+    }).join('');
+  }
   saveState();
 }
 function renderLibrary(){
