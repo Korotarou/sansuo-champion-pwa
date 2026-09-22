@@ -268,15 +268,32 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q 'SAPIX α1昇格' app.js
           grep -q 'alpha1FocusKeywords' app.js
-          grep -q 'α1昇格を最優先' app.js
-          grep -q 'α1 QUEST｜4科ラボ' index.html
-          grep -q 'α1 QUEST｜4科ラボ' app.js
+          grep -q 'function alpha1Gate()' app.js
+          grep -q 'きょうの4科クエスト' index.html
+          grep -q 'きょうの4科クエスト' app.js
           grep -q '"start_url": "./?home=1"' manifest.webmanifest
-          grep -q 'sansuo-champion-v14-alpha1-quest' sw.js
+          grep -q '>4</text>' assets/icon.svg
+          grep -q '>GO!</text>' assets/icon.svg
+          grep -q 'sansuo-champion-v16-four-subject-quest' sw.js
           grep -q 'function alpha1Ready()' japanese/app.js
-          grep -q 'kokugo-lab-v2-alpha1-first' japanese/sw.js
+          grep -q 'kokugo-lab-v3-daily-quest' japanese/sw.js
+
+      - name: Kid-facing copy gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'きょうの4科クエスト' app.js
+          grep -q 'きょうの国語8問' japanese/app.js
+          grep -q '40分チャレンジ' japanese/app.js
+          ! grep -q 'α1' app.js
+          ! grep -q '筑駒' app.js
+          ! grep -q 'SAPIX' app.js
+          ! grep -q 'α1' japanese/app.js
+          ! grep -q '筑駒' japanese/app.js
+          ! grep -q 'SAPIX' japanese/app.js
+          ! grep -q 'α1' index.html
+          ! grep -q 'SAPIX' manifest.webmanifest
 
       - name: Verify PWA structure and privacy
         shell: bash

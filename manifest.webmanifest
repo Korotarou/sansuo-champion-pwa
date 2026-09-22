@@ -1,7 +1,7 @@
 {
-  "name": "α1 QUEST｜4科ラボ｜算数・国語・理科・社会",
-  "short_name": "α1 QUEST",
-  "description": "SAPIX α1昇格を直近目標に、算数・国語・理科・社会を毎日進める4科統合学習PWA",
+  "name": "きょうの4科クエスト｜算数・国語・理科・社会",
+  "short_name": "4科クエスト",
+  "description": "算数・国語・理科・社会の今日のぶんを、クエスト感覚で少しずつ進める4科学習PWA",
   "start_url": "./?home=1",
   "scope": "./",
   "display": "standalone",
