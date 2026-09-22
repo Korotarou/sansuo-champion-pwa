@@ -1,4 +1,4 @@
-const CACHE="social-lab-418-v03-20260922";
+const CACHE="social-lab-418-v03-nav1-20260922";
 const ASSETS=["./","./index.html","./styles.css","./loader.js","./problem-engine.js","./app.js","./manifest.webmanifest","./assets/icon.svg","./payload/data1.txt","./payload/data2.txt","./payload/data3.txt"];
 self.addEventListener("install",function(e){e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(ASSETS);}).then(function(){return self.skipWaiting();}));});
 self.addEventListener("activate",function(e){e.waitUntil(caches.keys().then(function(keys){return Promise.all(keys.filter(function(k){return k.indexOf('social-lab-')===0&&k!==CACHE;}).map(function(k){return caches.delete(k);}));}).then(function(){return self.clients.claim();}));});
