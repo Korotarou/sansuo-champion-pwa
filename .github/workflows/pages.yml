@@ -271,7 +271,10 @@ jobs:
           grep -q 'SAPIX α1昇格' app.js
           grep -q 'alpha1FocusKeywords' app.js
           grep -q 'α1昇格を最優先' app.js
-          grep -q 'sansuo-champion-v12-alpha1-first' sw.js
+          grep -q 'α1 QUEST｜4科ラボ' index.html
+          grep -q 'α1 QUEST｜4科ラボ' app.js
+          grep -q '"start_url": "./?home=1"' manifest.webmanifest
+          grep -q 'sansuo-champion-v14-alpha1-quest' sw.js
           grep -q 'function alpha1Ready()' japanese/app.js
           grep -q 'kokugo-lab-v2-alpha1-first' japanese/sw.js
 
