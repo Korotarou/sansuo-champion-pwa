@@ -168,5 +168,5 @@ function closeModal(){document.getElementById("modalRoot").innerHTML="";}
 function render(){var m=document.getElementById("main");if(!m)return;var h=view==="home"?home():view==="practice"?practice():view==="review"?review():view==="tests"?tests():view==="parent"?parent():view==="curriculum"?curriculum():settings();m.innerHTML=h;if(q&&(view==="practice"||view==="review"))setTimeout(renderQ,0);}
 window.App={show:show,start:start,choose:choose,hint:hint,submit:submit,judgeShort:judgeShort,model:model,setError:setError,explained:explained,next:next,startReview:startReview,addTest:addTest,deleteTest:deleteTest,setWeek:setWeek,saveSettings:saveSettings,exportData:exportData,importData:importData,reset:reset,installHelp:installHelp,closeModal:closeModal};
 nav();render();
-if("serviceWorker" in navigator)window.addEventListener("load",function(){navigator.serviceWorker.register("./sw.js").catch(function(){});});
+if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").catch(function(){});
 })();
