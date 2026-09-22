@@ -253,6 +253,17 @@ jobs:
           console.log('Science PWA integrity PASS: '+qs.length+' questions');
           NODE
 
+      - name: Japanese PWA integrity test
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check japanese/data.js
+          node --check japanese/app.js
+          node --check japanese/sw.js
+          node tools/audit-japanese-content.mjs
+          grep -q 'noindex' japanese/index.html
+          grep -q '4科ホーム' japanese/app.js
+
       - name: Verify PWA structure and privacy
         shell: bash
         run: |

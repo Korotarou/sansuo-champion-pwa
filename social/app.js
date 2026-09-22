@@ -14,7 +14,7 @@ function iso(){return new Date().toISOString();}
 function day(n){var d=new Date();d.setDate(d.getDate()+n);return d.toISOString();}
 function num(v){var n=Number(v);return Number.isFinite(n)?n:0;}
 function toast(s){var e=document.getElementById("toast");if(!e)return;e.textContent=s;e.classList.add("show");setTimeout(function(){e.classList.remove("show");},1800);}
-function header(title,sub){return '<div class="top"><div><div class="eyebrow">SOCIAL LAB 418</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(sub||"")+'</div></div><div class="top-actions"><a class="btn ghost subject-home-link" href="../?home=1" aria-label="3科ホームへ">3科ホーム</a><button class="btn ghost" onclick="App.installHelp()">iPad追加</button></div></div>';}
+function header(title,sub){return '<div class="top"><div><div class="eyebrow">SOCIAL LAB 418</div><h1>'+esc(title)+'</h1><div class="muted">'+esc(sub||"")+'</div></div><div class="top-actions"><a class="btn ghost subject-home-link" href="../?home=1" aria-label="4科ホームへ">4科ホーム</a><button class="btn ghost" onclick="App.installHelp()">iPad追加</button></div></div>';}
 function metric(l,v,s){return '<div class="card flat"><div class="metric-label">'+esc(l)+'</div><div class="metric">'+esc(v)+'</div><div class="muted small">'+esc(s||"")+'</div></div>';}
 function nav(){
  var items=[["home","ホーム"],["practice","演習"],["review","再テスト"],["tests","SAPIX"],["parent","保護者"],["curriculum","52週"],["settings","設定"]];
