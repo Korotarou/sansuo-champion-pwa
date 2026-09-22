@@ -275,9 +275,9 @@ jobs:
           grep -q '"start_url": "./?home=1"' manifest.webmanifest
           grep -q '>4</text>' assets/icon.svg
           grep -q '>GO!</text>' assets/icon.svg
-          grep -q 'sansuo-champion-v16-four-subject-quest' sw.js
+          grep -q 'sansuo-champion-v18-adaptive-quality' sw.js
           grep -q 'function alpha1Ready()' japanese/app.js
-          grep -q 'kokugo-lab-v3-daily-quest' japanese/sw.js
+          grep -q 'kokugo-lab-v4-calm-quest' japanese/sw.js
 
       - name: Kid-facing copy gate
         shell: bash
