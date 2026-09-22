@@ -62,8 +62,13 @@ function pickMock(){
   ids.push(...shuffle(QUESTIONS.filter(q=>q.id.startsWith('K')&&q.level>=3),Date.now()+29).slice(0,2).map(q=>q.id));
   return uniqueIds(ids).slice(0,12)
 }
+function alpha1Ready(){
+  const target=Math.max(6,Math.min(14,Number(state.settings.daily)||8));
+  return due().length===0&&todayAttempts().length>=target;
+}
 function start(mode){
   clearInterval(timerHandle);selected=null;revealed=false;shortText='';
+  if(mode==='tsukukoma'&&!alpha1Ready()){toast('先にα1デイリーと期限復習を完了しよう');show('home');return}
   let ids=mode==='alpha1'?pickDaily():mode==='knowledge'?pickKnowledge():mode==='reading'?pickReading():mode==='review'?due().slice(0,10).map(r=>r.qid):mode==='noai'?pickNoAI():mode==='tsukukoma'?pickMock():pickDaily();
   if(!ids.length){toast('期限復習はありません');show('practice');return}
   session={mode,ids,index:0,startedAt:Date.now(),deadline:mode==='tsukukoma'?Date.now()+40*60*1000:null,results:[]};
@@ -98,8 +103,8 @@ function nav(){
 }
 function show(v){clearInterval(timerHandle);view=v;session=null;selected=null;revealed=false;shortText='';render()}
 function homeView(){
-  const a=todayAttempts(),week=DATA.curriculum[Math.max(0,Math.min(51,(state.settings.week||1)-1))],target=Math.max(6,Math.min(14,Number(state.settings.daily)||8));
-  return header('国語Lab','SAPIX α1水準の基礎から、筑駒で必要な根拠読解・記述へ')+
+  const a=todayAttempts(),week=DATA.curriculum[Math.max(0,Math.min(51,(state.settings.week||1)-1))],target=Math.max(6,Math.min(14,Number(state.settings.daily)||8)),ready=alpha1Ready();
+  return header('国語Lab','直近目標：SAPIX α1昇格｜その先に筑駒')+
   '<section class="hero"><div class="tag-row"><span class="tag gold">180問</span><span class="tag blue">52週</span><span class="tag green">記述は自己採点</span><span class="tag">非公式・完全オリジナル</span></div><h2>読む → 根拠を拾う → 条件どおりに書く</h2><p>語彙だけ、読解だけに分けません。毎日のα1ルートで、言葉・論理・長文・記述を混ぜ、間違いは期限付きで再テストします。筑駒想定40分は時間条件のみを参考にした独自演習で、SAPIX・筑波大学附属駒場中学校の公式教材ではありません。</p></section>'+
   '<div class="grid cols-4">'+
   metric('今日',a.length+' / '+target+'問','α1ルート')+
@@ -108,13 +113,13 @@ function homeView(){
   metric('今週','W'+String(week.week).padStart(2,'0'),week.phase)+
   '</div>'+
   '<section class="section"><div class="section-title">今日やること</div><div class="grid cols-2">'+
-  modeCard('α1デイリー','期限復習→語彙→短文論理→長文記述を8問。','alpha1','今日の8問を始める')+
-  modeCard('筑駒想定40分','40分・100点換算。高難度長文2系統＋論理＋知識。','tsukukoma','40分演習を始める')+
+  modeCard('α1デイリー','最優先。期限復習→語彙→短文論理→長文記述を8問。','alpha1','α1 今日の8問を始める')+
+  modeCard('筑駒想定40分','発展。α1デイリーと期限復習を終えた日に実施。','tsukukoma',ready?'発展40分を始める':'α1日課完了後に解放',!ready)+
   '</div></section>'+
   '<section class="section"><div class="qa-banner">記述問題はAIが○×を決めません。答案を書いた後に、必須観点と例答を見て「満たした／もう一度」を本人または保護者が判定します。</div></section>'
 }
 function metric(l,v,s){return '<div class="card flat"><div class="metric-label">'+esc(l)+'</div><div class="metric">'+esc(v)+'</div><div class="muted small">'+esc(s)+'</div></div>'}
-function modeCard(t,d,m,b){return '<article class="card mode-card"><div class="eyebrow">'+esc(m)+'</div><h3>'+esc(t)+'</h3><p>'+esc(d)+'</p><button class="btn primary" data-mode="'+m+'">'+esc(b)+'</button></article>'}
+function modeCard(t,d,m,b,disabled=false){return '<article class="card mode-card"><div class="eyebrow">'+esc(m)+'</div><h3>'+esc(t)+'</h3><p>'+esc(d)+'</p><button class="btn '+(disabled?'ghost':'primary')+'" data-mode="'+m+'" '+(disabled?'disabled':'')+'>'+esc(b)+'</button></article>'}
 function practiceView(){
   return header('演習','目的別に回す。記述だけをAIに丸投げしない。')+
   '<div class="grid cols-3">'+
@@ -123,7 +128,7 @@ function practiceView(){
   modeCard('語彙・知識10問','語彙、接続語、文法、漢字・語句。','knowledge','始める')+
   modeCard('AIなし記述5問','必須観点と例答で自己採点する記述集中。','noai','始める')+
   modeCard('期限再テスト','間違えた問題を1日→3日→卒業で追跡。','review','再テスト')+
-  modeCard('筑駒想定40分','40分で読む・選ぶ・書く。100点換算。','tsukukoma','始める')+
+  modeCard('筑駒想定40分','発展。α1の日課・期限復習を終えてから。','tsukukoma',alpha1Ready()?'始める':'α1日課完了後',!alpha1Ready())+
   '</div>'
 }
 function quizView(){

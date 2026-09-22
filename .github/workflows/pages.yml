@@ -264,6 +264,17 @@ jobs:
           grep -q 'noindex' japanese/index.html
           grep -q '4科ホーム' japanese/app.js
 
+      - name: Alpha1-first priority gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'SAPIX α1昇格' app.js
+          grep -q 'alpha1FocusKeywords' app.js
+          grep -q 'α1昇格を最優先' app.js
+          grep -q 'sansuo-champion-v12-alpha1-first' sw.js
+          grep -q 'function alpha1Ready()' japanese/app.js
+          grep -q 'kokugo-lab-v2-alpha1-first' japanese/sw.js
+
       - name: Verify PWA structure and privacy
         shell: bash
         run: |
