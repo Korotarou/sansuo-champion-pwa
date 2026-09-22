@@ -1,4 +1,4 @@
-const CACHE = 'hayabusa-science-v9-nav3';
+const CACHE = 'hayabusa-science-v10-calm-quest';
 const ASSETS = [
   './','./index.html','./manifest.webmanifest','./assets/icon.svg',
   './styles-base.css','./styles-quiz.css','./styles-record.css',

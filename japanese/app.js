@@ -119,7 +119,7 @@ function homeView(){
   '<section class="section"><div class="qa-banner">記述問題はAIが○×を決めません。答案を書いた後に、必須観点と例答を見て「満たした／もう一度」を本人または保護者が判定します。</div></section>'
 }
 function metric(l,v,s){return '<div class="card flat"><div class="metric-label">'+esc(l)+'</div><div class="metric">'+esc(v)+'</div><div class="muted small">'+esc(s)+'</div></div>'}
-function modeCard(t,d,m,b,disabled=false){return '<article class="card mode-card"><div class="eyebrow">'+esc(m)+'</div><h3>'+esc(t)+'</h3><p>'+esc(d)+'</p><button class="btn '+(disabled?'ghost':'primary')+'" data-mode="'+m+'" '+(disabled?'disabled':'')+'>'+esc(b)+'</button></article>'}
+function modeCard(t,d,m,b,disabled=false){return '<article class="card mode-card"><div class="eyebrow">'+esc(m==='alpha1'?'DAILY':m)+'</div><h3>'+esc(t)+'</h3><p>'+esc(d)+'</p><button class="btn '+(disabled?'ghost':'primary')+'" data-mode="'+m+'" '+(disabled?'disabled':'')+'>'+esc(b)+'</button></article>'}
 function practiceView(){
   return header('演習','目的別に回す。記述だけをAIに丸投げしない。')+
   '<div class="grid cols-3">'+
@@ -149,7 +149,7 @@ function quizView(){
     if(!revealed)body+='<button class="btn primary" id="revealRubric">採点基準を見る</button>';
     else body+='<div class="rubric"><b>必須観点</b><ul>'+q.rubric.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div><div class="sample"><b>例答</b><br>'+esc(q.sample)+'</div><div class="qa-banner" style="margin-top:12px">AI判定なし。自分の答案が必須観点を満たしているかで判定。</div><div class="top-actions" style="margin-top:12px"><button class="btn good" id="shortGood">基準を満たした</button><button class="btn bad" id="shortRetry">もう一度</button></div>';
   }
-  const side='<aside class="card side-card"><div class="eyebrow">'+esc(session.mode.toUpperCase())+'</div>'+(session.mode==='tsukukoma'?'<div class="timer" id="timer">40:00</div><div class="muted small">自動提出はしません。残り時間だけ表示。</div>':'<div class="score-big">'+(session.index+1)+'</div><div class="muted small">全'+session.ids.length+'問</div>')+'<div style="margin-top:18px"><button class="btn ghost" id="quitSession">演習を中断</button></div></aside>';
+  const side='<aside class="card side-card"><div class="eyebrow">'+esc(session.mode==='alpha1'?'DAILY':session.mode.toUpperCase())+'</div>'+(session.mode==='tsukukoma'?'<div class="timer" id="timer">40:00</div><div class="muted small">自動提出はしません。残り時間だけ表示。</div>':'<div class="score-big">'+(session.index+1)+'</div><div class="muted small">全'+session.ids.length+'問</div>')+'<div style="margin-top:18px"><button class="btn ghost" id="quitSession">演習を中断</button></div></aside>';
   return header(session.mode==='tsukukoma'?'40分チャレンジ':'問題演習',session.mode==='tsukukoma'?'40分・100点換算 / 完全オリジナル':'根拠を確認して進む')+'<div class="question-shell">'+left+'<div><div class="card q-card">'+body+'</div>'+side+'</div></div>'
 }
 function resultView(){

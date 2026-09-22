@@ -1,7 +1,7 @@
 {
-  "name": "理科ラボ｜SAPIX α1 × 筑駒・開成",
+  "name": "理科ラボ｜SAPIX復習 × 最難関思考",
   "short_name": "理科ラボ",
-  "description": "SAPIXの復習からα1、筑駒・開成につながる理科の思考力を育てるオフライン学習PWA",
+  "description": "SAPIXの復習から、筑駒・開成につながる理科の思考力を育てるオフライン学習PWA",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

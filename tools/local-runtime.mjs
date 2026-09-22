@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import vm from 'node:vm';
 import http from 'node:http';
 import assert from 'node:assert/strict';
+import { validateRootAppCache } from './root-app-cache.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.join(root, '.local-runtime');
@@ -50,6 +51,9 @@ function references(dir) {
 }
 
 function validate(dir = output) {
+  assert.equal(read(dir, 'sw.js'), read(root, 'sw.js'), 'Runtime service worker differs from root');
+  validateRootAppCache(read(dir, 'sw.js'), fs.readFileSync(path.join(dir, 'app.js')));
+  console.log('Root app payload/cache binding: PASS');
   for (const name of runtime) {
     assert(fs.readFileSync(path.join(dir, name)).equals(decode(name)), `Payload byte mismatch: ${name}`);
     const check = spawnSync(process.execPath, ['--check', path.join(dir, name)], { encoding: 'utf8', timeout: 10000 });
@@ -83,6 +87,7 @@ function validate(dir = output) {
 function build() {
   // Decode before touching any previous generated output.
   const decoded = runtime.map(name => [name, decode(name)]);
+  validateRootAppCache(read(root, 'sw.js'), decoded.find(([name]) => name === 'app.js')[1]);
   if (fs.existsSync(output)) {
     assert(!fs.lstatSync(output).isSymbolicLink(), 'Refusing linked output directory');
     assert.equal(fs.realpathSync(output), path.join(fs.realpathSync(root), '.local-runtime'));
@@ -98,7 +103,7 @@ function build() {
       fs.copyFileSync(path.join(root, entry.name), path.join(output, entry.name));
     }
   }
-  for (const dir of ['assets', 'science', 'social']) fs.cpSync(path.join(root, dir), path.join(output, dir), { recursive: true });
+  for (const dir of ['assets', 'japanese', 'science', 'social']) fs.cpSync(path.join(root, dir), path.join(output, dir), { recursive: true });
   for (const [name, bytes] of decoded) fs.writeFileSync(path.join(output, name), bytes);
   validate();
   console.log('Generated output: .local-runtime/');

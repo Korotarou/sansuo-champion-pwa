@@ -28,17 +28,17 @@ function active(){return state.reviews.filter(function(r){return !r.done;});}
 function mastery(domain){var a=recent(45).filter(function(x){return x.domain===domain;});return {n:a.length,p:a.length?Math.round(100*a.filter(function(x){return x.correct;}).length/a.length):0};}
 function latestTest(){return state.tests.slice().sort(function(a,b){return String(b.date).localeCompare(String(a.date));})[0]||null;}
 function alphaCard(){
- var t=latestTest();if(!t)return '<div class="card alpha-box"><div class="metric-label">α1目標</div><h3>実基準点が分かったテストから記録</h3><p class="muted">基準点は予測しません。実際の基準点と4科得点の差だけを使います。</p></div>';
+ var t=latestTest();if(!t)return '<div class="card alpha-box"><div class="metric-label">SAPIXテスト</div><h3>実基準点が分かったテストから記録</h3><p class="muted">基準点は予測しません。実際の基準点と4科得点の差だけを使います。</p></div>';
  var gap=t.alphaCut!==""&&t.alphaCut!=null?Math.max(0,num(t.alphaCut)-num(t.total)):null;
- return '<div class="card alpha-box"><div class="metric-label">直近SAPIX / α1</div><h3>'+esc(t.name)+'</h3><div class="alpha-gap">'+(gap==null?"基準未入力":gap===0?"到達":"あと "+gap+"点")+'</div><p class="muted">回収候補：正答率70%以上 '+num(t.lost70)+'点 / 50〜70% '+num(t.lost50)+'点 / 30〜50% '+num(t.lost30)+'点</p></div>';
+ return '<div class="card alpha-box"><div class="metric-label">直近SAPIX</div><h3>'+esc(t.name)+'</h3><div class="alpha-gap">'+(gap==null?"基準未入力":gap===0?"到達":"あと "+gap+"点")+'</div><p class="muted">回収候補：正答率70%以上 '+num(t.lost70)+'点 / 50〜70% '+num(t.lost50)+'点 / 30〜50% '+num(t.lost30)+'点</p></div>';
 }
 function home(){
  var a=recent(7),acc=a.length?Math.round(100*a.filter(function(x){return x.correct;}).length/a.length):0;
- return header("ホーム","SAPIX社会を主教材に、α1の取りこぼし削減と最難関校につながる思考力を育てる")+
+ return header("ホーム","SAPIX社会を主教材に、取りこぼしを減らし最難関校につながる思考力を育てる")+
  '<div class="hero"><div class="hero-kicker">小4の既定運用</div><h2>地理を固め、資料から理由を説明する</h2><p>通常デイリーは地理75％＋初見資料25％。歴史・公民は先取りトラックとして分けます。ヒント後正解は△扱い、後日ヒントなしで再現できるまで追跡します。</p><div class="qactions"><button class="btn" onclick="App.start(\'daily\')">今日の12問</button><button class="btn secondary" onclick="App.start(\'exam\')">AI禁止テスト</button></div></div>'+
  '<div class="section-head"><h2>今の状態</h2></div><div class="grid cols-4">'+metric("7日演習",a.length+"問","自力時間を優先")+metric("7日正答率",acc+"%","ヒント後も含む")+metric("再テスト期限",due().length+"問","期限到来を先に")+metric("問題バンク",E.count()+"問","オリジナル")+'</div>'+
  '<div class="section-head"><h2>今日の優先</h2></div><div class="grid cols-2"><div class="card action-card" onclick="App.show(\'review\')"><div class="metric-label">RETEST</div><div class="big">再テスト '+due().length+'問</div><div class="muted">ヒントなし＋説明できる状態を2回再現して卒業。</div></div><div class="card action-card" onclick="App.start(\'elite\')"><div class="metric-label">THINK DEEPER</div><div class="big">初見資料・因果記述</div><div class="muted">筑駒・開成につながる、条件整理→根拠→説明。</div></div></div>'+
- '<div class="section-head"><h2>α1</h2></div>'+alphaCard();
+ '<div class="section-head"><h2>SAPIXテスト振り返り</h2></div>'+alphaCard();
 }
 function practice(){
  return header("演習","答えを急がず、まず自分で考える")+

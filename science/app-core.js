@@ -6,7 +6,7 @@ const APP_VERSION = 1;
 const QUESTIONS = window.HAYABUSA_SCIENCE_QUESTIONS || [];
 
 const modeConfig = {
-  alpha: {label:'α1ルート',count:5,time:null},
+  alpha: {label:'きょうの5問',count:5,time:null},
   review: {label:'SAPIX復習',count:5,time:null},
   oral: {label:'理科口頭試問',count:3,time:null,free:true},
   knowledge: {label:'知識・原理',count:6,time:null,skills:['知識','原理']},
@@ -183,7 +183,7 @@ function readinessText(score){
   if(state.answered<5) return 'まず5問解くと現在地が見えてきます。';
   if(score<55) return '基礎の取りこぼしを先に減らそう。難問より再現性を優先。';
   if(score<70) return '基礎は育っています。理由説明と資料問題を増やす段階。';
-  if(score<85) return 'α1を狙う土台が整いつつあります。再テスト成功率を上げよう。';
+  if(score<85) return '高いレベルに挑戦する土台が整いつつあります。再テスト成功率を上げよう。';
   return '高い水準です。初見考察でも根拠を言葉にできるか確認しよう。';
 }
 

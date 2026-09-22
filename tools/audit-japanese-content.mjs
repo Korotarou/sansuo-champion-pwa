@@ -47,7 +47,7 @@ assert(app.includes("const KEY='kokugoLabV1'"),'storage key');
 assert(app.includes("mode==='tsukukoma'"),'tsukukoma mode');
 assert(app.includes('function alpha1Ready()'),'alpha1 readiness gate');
 assert(app.includes('先にきょうの8問と復習を終わらせよう'),'daily-first enforcement');
-assert(sw.includes("kokugo-lab-v3-daily-quest"),'daily quest cache');
+assert(sw.includes("kokugo-lab-v4-calm-quest"),'daily quest cache');
 assert(app.includes('40*60*1000'),'40 minute timer');
 assert(app.includes('AI判定なし'),'no-AI grading label');
 assert(app.includes("data-mode=\"noai\"")||app.includes("modeCard('AIなし記述5問'"),'no-AI mode');
