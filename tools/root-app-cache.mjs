@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 // Hash the decoded payload bytes, not the gzip/base64 transport representation.
 const releases = [
   ['sansuo-champion-v18-adaptive-quality', '8df6d828da7de34d4ffbd84a60603d265e1518f434e14f69fdc68435e9fc2460'],
+  ['sansuo-champion-v19-improvement-loop', '8df6d828da7de34d4ffbd84a60603d265e1518f434e14f69fdc68435e9fc2460'],
 ];
 
 export function validateRootAppCache(worker, payload) {

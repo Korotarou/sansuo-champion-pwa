@@ -5,7 +5,7 @@ if(!D||!E){throw new Error("問題データの読み込みに失敗しました"
 var KEY="socialLabV2";
 var ERR={A:"問題文の読み違い",B:"知識不足",C:"方針が立たない",D:"途中の論理ミス",E:"計算・数字のミス",F:"図・表・整理不足",G:"時間不足"};
 var def={version:2,attempts:[],reviews:[],tests:[],settings:{daily:12,week:1,includeAhead:false},focus:false};
-var state=load(),view="home",q=null,track="daily",hintShown=false,choice=null,reviewId=null,result=null;
+var state=load(),view="home",q=null,track="daily",hintShown=false,choice=null,reviewId=null,result=null,qStartedAt=0;
 function clone(x){return JSON.parse(JSON.stringify(x));}
 function load(){try{var x=JSON.parse(localStorage.getItem(KEY)||"null");return x&&x.version===2?Object.assign(clone(def),x):clone(def);}catch(e){return clone(def);}}
 function save(){localStorage.setItem(KEY,JSON.stringify(state));}
@@ -68,7 +68,7 @@ function pick(t){
  var cand=pool.filter(function(x){return last.indexOf(x.id)<0;});if(!cand.length)cand=pool;
  return cand[Math.floor(Math.random()*cand.length)]||E.bank[0];
 }
-function start(t){track=t;state.focus=t==="exam";save();q=pick(t);reviewId=null;hintShown=false;choice=null;result=null;if(view!=="practice"){view="practice";nav();render();}setTimeout(renderQ,0);}
+function start(t){track=t;state.focus=t==="exam";save();q=pick(t);qStartedAt=Date.now();reviewId=null;hintShown=false;choice=null;result=null;if(view!=="practice"){view="practice";nav();render();}setTimeout(renderQ,0);}
 function renderQ(){
  var host=document.getElementById("questionHost");if(!host||!q)return;
  var type=q.type==="mcq"?"選択":"記述";
@@ -101,7 +101,7 @@ function showRubric(text){
 function model(){var f=document.getElementById("feedbackHost");if(f)f.innerHTML+='<div class="feedback info"><strong>解答例</strong><p>'+esc(q.model||"")+'</p><p class="muted small">表現が違っても、必要な因果関係が説明できていればよい。</p></div>';}
 function judgeShort(ok){finish(ok,result?result.answer:"",false);}
 function finish(ok,answer,isMcq){
- var a={id:"A-"+Date.now(),qid:q.id,created:iso(),correct:!!ok,hint:hintShown,focus:state.focus,domain:q.domain,unit:q.unit,level:q.level,answer:answer,errorCode:"",explained:false};
+ var a={id:"A-"+Date.now(),qid:q.id,created:iso(),correct:!!ok,hint:hintShown,focus:state.focus,domain:q.domain,unit:q.unit,level:q.level,answer:answer,errorCode:"",explained:false,seconds:Math.max(1,Math.round((Date.now()-(qStartedAt||Date.now()))/1000))};
  state.attempts.push(a);
  if(!ok)schedule(q.id,1);else if(hintShown)schedule(q.id,3);
  if(reviewId&&ok&&!hintShown){reviewPass(reviewId);}else if(reviewId&&!ok){var rr=state.reviews.find(function(x){return x.id===reviewId;});if(rr){rr.successes=0;rr.due=day(1);rr.lastResult="fail";}}
@@ -121,14 +121,14 @@ function schedule(qid,days){
  else if(new Date(r.due)>new Date(day(days)))r.due=day(days);
 }
 function reviewPass(id){var r=state.reviews.find(function(x){return x.id===id;});if(!r)return;r.successes=(r.successes||0)+1;r.lastResult="pass";if(r.successes>=2){r.done=true;r.doneAt=iso();}else r.due=day(3);}
-function next(){if(reviewId){startReview();}else{q=pick(track);hintShown=false;choice=null;result=null;renderQ();}}
+function next(){if(reviewId){startReview();}else{q=pick(track);qStartedAt=Date.now();hintShown=false;choice=null;result=null;renderQ();}}
 function review(){
  var ds=due(),ac=active();
  var rows=ds.length?ds.slice(0,30).map(function(r){var z=E.get(r.qid);return '<div class="due-item"><div><strong>'+esc(z?z.unit:r.qid)+'</strong><div class="muted small">'+esc(z?z.domain:"")+' / 成功 '+(r.successes||0)+'/2</div></div><button class="btn secondary" onclick="App.startReview(\''+r.id+'\')">解く</button></div>';}).join(""):'<div class="empty">期限が来た再テストはありません。</div>';
  return header("誤答・再テスト","ヒントなし＋説明できる状態を2回再現して卒業")+'<div class="grid cols-3">'+metric("期限到来",ds.length+"問","今日やる")+metric("追跡中",ac.length+"問","未卒業")+metric("卒業済み",state.reviews.filter(function(r){return r.done;}).length+"問","2回再現")+'</div><div class="section-head"><h2>今日の再テスト</h2></div><div class="card">'+rows+'</div><div id="questionHost"></div>';
 }
 function startReview(id){
- var r=id?state.reviews.find(function(x){return x.id===id;}):due()[0];if(!r){toast("期限到来の再テストはありません");return;}reviewId=r.id;track="review";state.focus=true;q=E.get(r.qid);hintShown=false;choice=null;result=null;view="review";nav();render();setTimeout(renderQ,0);
+ var r=id?state.reviews.find(function(x){return x.id===id;}):due()[0];if(!r){toast("期限到来の再テストはありません");return;}reviewId=r.id;track="review";state.focus=true;q=E.get(r.qid);qStartedAt=Date.now();hintShown=false;choice=null;result=null;view="review";nav();render();setTimeout(renderQ,0);
 }
 function tests(){
  var rows=state.tests.slice().sort(function(a,b){return String(b.date).localeCompare(String(a.date));}).map(function(t){var gap=t.alphaCut!==""?Math.max(0,num(t.alphaCut)-num(t.total)):"—";return '<tr><td>'+esc(t.date)+'</td><td>'+esc(t.name)+'</td><td>'+esc(t.total||"—")+'</td><td>'+esc(t.alphaCut||"—")+'</td><td>'+esc(gap)+'</td><td>'+esc(t.social||"—")+'/'+esc(t.socialMax||"—")+'</td><td>70%↑ '+num(t.lost70)+' / 50–70% '+num(t.lost50)+'</td><td><button class="btn ghost" onclick="App.deleteTest(\''+t.id+'\')">削除</button></td></tr>';}).join("");

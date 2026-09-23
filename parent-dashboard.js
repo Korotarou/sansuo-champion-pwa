@@ -574,6 +574,7 @@
 
     main.innerHTML =
       (window.AdaptiveQuality ? window.AdaptiveQuality.parentHTML() : '')+
+      (window.ImprovementLoop ? window.ImprovementLoop.parentHTML() : '')+
       '<header class="page-head pd-head"><div><div class="pd-eyebrow">PARENT DASHBOARD</div><h1 class="page-title">学習改善ダッシュボード</h1><div class="page-sub">成績を見る画面ではなく、次に何を直すかを決める画面です。</div></div><div class="page-actions"><button class="btn ghost" id="pdGoReview">復習一覧</button><button class="btn primary" id="pdGoChallenge">問題に挑戦</button></div></header>'+
       '<section class="pd-priority"><div><span>今日の判断</span><h2>'+esc(priority)+'</h2></div><div class="pd-week-badge">W'+String(currentWeekNumber(state)).padStart(2,'0')+'<small>'+esc(plan ? plan.title : '年間計画')+'</small></div></section>'+
       '<section class="pd-metrics">'+
@@ -618,6 +619,10 @@
     const challenge = document.getElementById('pdGoChallenge');
     if (review) review.onclick = function(){ setCoreRoute('review'); };
     if (challenge) challenge.onclick = function(){ setCoreRoute('challenge'); };
+    const improveCapsule=document.getElementById('pdImprovementCapsule');
+    const improveCodex=document.getElementById('pdImprovementCodex');
+    if(improveCapsule) improveCapsule.onclick=function(){ if(window.ImprovementLoop) window.ImprovementLoop.download(window.ImprovementLoop.current(),'capsule'); };
+    if(improveCodex) improveCodex.onclick=function(){ if(window.ImprovementLoop) window.ImprovementLoop.download(window.ImprovementLoop.current(),'codex'); };
 
     document.querySelectorAll('[data-pd-scroll-recovery]').forEach(function(btn) {
       btn.onclick = function() {

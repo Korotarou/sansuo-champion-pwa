@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "project": "four-subject-quest",
+  "feature": "automatic-improvement-loop-v2.6",
+  "status": "LOCAL_IMPLEMENTATION_COMPLETE",
+  "date_jst": "2026-09-23",
+  "tests": {
+    "improvement_loop": "18/18 PASS",
+    "adaptive_quality": "24/24 PASS",
+    "root_cache": "4/4 PASS",
+    "math_home_diversity": "11/11 PASS",
+    "local_runtime_build": "PASS",
+    "local_runtime_validate": "PASS",
+    "ai_eval_ready_parser": "VALID",
+    "git_diff_check": "PASS"
+  },
+  "invariants": {
+    "questions": 438,
+    "generated_families": 30,
+    "curriculum_weeks": 52,
+    "raw_question_ids_exported": false,
+    "raw_answers_exported": false,
+    "network_dependency_added": false,
+    "auto_commit": false,
+    "auto_push": false,
+    "auto_deploy": false
+  },
+  "publication": "NOT_AUTHORIZED_NOT_PERFORMED"
+}

@@ -29,7 +29,7 @@ function schedule(qid,success,fromReview=false){
 }
 function record(q,success,answer){
   const fromReview=session&&session.mode==='review';
-  state.attempts.push({qid:q.id,kind:q.kind,domain:q.domain,genre:q.genre||'',success,answer:answer??null,created:new Date().toISOString(),mode:session?.mode||'practice'});
+  state.attempts.push({qid:q.id,kind:q.kind,domain:q.domain,genre:q.genre||'',success,answer:answer??null,created:new Date().toISOString(),mode:session?.mode||'practice',seconds:Math.max(1,Math.round((Date.now()-(session?.questionStartedAt||Date.now()))/1000))});
   if(state.attempts.length>1200)state.attempts=state.attempts.slice(-1200);
   schedule(q.id,success,fromReview);save();
 }
@@ -71,11 +71,11 @@ function start(mode){
   if(mode==='tsukukoma'&&!alpha1Ready()){toast('先にきょうの8問と復習を終わらせよう');show('home');return}
   let ids=mode==='alpha1'?pickDaily():mode==='knowledge'?pickKnowledge():mode==='reading'?pickReading():mode==='review'?due().slice(0,10).map(r=>r.qid):mode==='noai'?pickNoAI():mode==='tsukukoma'?pickMock():pickDaily();
   if(!ids.length){toast('期限復習はありません');show('practice');return}
-  session={mode,ids,index:0,startedAt:Date.now(),deadline:mode==='tsukukoma'?Date.now()+40*60*1000:null,results:[]};
+  session={mode,ids,index:0,startedAt:Date.now(),questionStartedAt:Date.now(),deadline:mode==='tsukukoma'?Date.now()+40*60*1000:null,results:[]};
   state.lastMode=mode;save();view='quiz';render();
 }
 function current(){return session?QMAP.get(session.ids[session.index]):null}
-function next(){selected=null;revealed=false;shortText='';if(!session)return;if(session.index+1>=session.ids.length){finish()}else{session.index++;render()}}
+function next(){selected=null;revealed=false;shortText='';if(!session)return;if(session.index+1>=session.ids.length){finish()}else{session.index++;session.questionStartedAt=Date.now();render()}}
 function finish(){
   clearInterval(timerHandle);
   const ok=session.results.filter(Boolean).length,total=session.results.length||session.ids.length;

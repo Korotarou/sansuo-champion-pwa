@@ -278,3 +278,8 @@
   .pd-alpha-plan-kpis{grid-template-columns:1fr 1fr}
   .pd-alpha-subjects{grid-template-columns:1fr}
 }
+
+.pd-improvement{border:1px solid rgba(92,152,255,.22)}
+.pd-improve-summary{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}.pd-improve-summary span{opacity:.72;font-size:.9rem}
+.pd-improve-card{display:grid;grid-template-columns:30px 1fr;gap:10px;padding:12px 0;border-top:1px solid rgba(255,255,255,.08)}.pd-improve-card>span{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:rgba(92,152,255,.14);font-weight:800}.pd-improve-card small,.pd-improve-card p{display:block;margin-top:4px;opacity:.78}.pd-improve-card p{margin-bottom:0}
+.pd-improve-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}.pd-improve-actions small{opacity:.65}

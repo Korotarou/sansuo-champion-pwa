@@ -1,10 +1,14 @@
 function markAttempt(q,isCorrect,explained,cause,noAI){
-  if(!state.history[q.id]) state.history[q.id]={attempts:0,correct:0,explained:0,wrong:0,lastAt:null,dueAt:null,cause:null,lastNoAI:false};
+  if(!state.history[q.id]) state.history[q.id]={attempts:0,correct:0,explained:0,wrong:0,lastAt:null,dueAt:null,cause:null,lastNoAI:false,lastSeconds:0,totalSeconds:0};
   const h=state.history[q.id];
   h.attempts++;
   if(isCorrect) h.correct++; else h.wrong++;
   if(explained) h.explained++;
   h.lastAt=Date.now(); h.cause=cause||h.cause; h.lastNoAI=!!noAI;
+  const seconds=Math.max(1,Math.round((Date.now()-(session?.questionStartedAt||Date.now()))/1000)); h.lastSeconds=seconds; h.totalSeconds=(Number(h.totalSeconds)||0)+seconds;
+  if(!Array.isArray(state.attemptLog)) state.attemptLog=[];
+  state.attemptLog.push({qid:q.id,at:new Date().toISOString(),correct:!!isCorrect,seconds});
+  if(state.attemptLog.length>1200) state.attemptLog=state.attemptLog.slice(-1200);
   const day=86400000;
   h.dueAt = (!isCorrect || !explained && !noAI) ? Date.now()+day : Date.now()+(noAI?14:7)*day;
   state.answered++; if(isCorrect) state.correct++; if(explained) state.explained++;

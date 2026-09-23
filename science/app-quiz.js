@@ -13,7 +13,7 @@ function startMode(mode, domain=null){
   const cfg=modeConfig[mode] || {label:`${domain}トレーニング`,count:8,time:null};
   const qs=selectQuestions(mode,domain);
   if(!qs.length){ toast('このモードの問題がまだありません'); return; }
-  session={mode,domain,cfg,questions:qs,index:0,answers:[],correct:0,explained:0,needsReview:0,startedAt:Date.now(),remaining:cfg.time,lockedFeedback:!!cfg.noAI,selected:null,hintIndex:0,answeredCurrent:false};
+  session={mode,domain,cfg,questions:qs,index:0,answers:[],correct:0,explained:0,needsReview:0,startedAt:Date.now(),questionStartedAt:Date.now(),remaining:cfg.time,lockedFeedback:!!cfg.noAI,selected:null,hintIndex:0,answeredCurrent:false};
   $('#quizModeLabel').textContent=domain ? `${domain}｜単元別` : cfg.label;
   $('#quizTimer').hidden=!cfg.time;
   $('#hintBtn').hidden=!!cfg.noAI;
@@ -28,7 +28,7 @@ function startTopic(topic){
   const qs=sample(pool,Math.min(8,pool.length));
   if(!qs.length){ toast('この単元の問題はまだありません'); return; }
   const cfg={label:topic+'トレーニング',count:qs.length,time:null};
-  session={mode:'topic',domain:null,topic,cfg,questions:qs,index:0,answers:[],correct:0,explained:0,needsReview:0,startedAt:Date.now(),remaining:null,lockedFeedback:false,selected:null,hintIndex:0,answeredCurrent:false};
+  session={mode:'topic',domain:null,topic,cfg,questions:qs,index:0,answers:[],correct:0,explained:0,needsReview:0,startedAt:Date.now(),questionStartedAt:Date.now(),remaining:null,lockedFeedback:false,selected:null,hintIndex:0,answeredCurrent:false};
   $('#quizModeLabel').textContent=topic+'｜単元別';
   $('#quizTimer').hidden=true;
   $('#hintBtn').hidden=false;
@@ -69,6 +69,7 @@ function renderFigure(fig){
   }
 }
 function renderQuestion(){
+  session.questionStartedAt=Date.now();
   const q=session.questions[session.index];
   session.selected=null; session.hintIndex=0; session.answeredCurrent=false;
   $('#quizCounter').textContent=`${session.index+1} / ${session.questions.length}`;
