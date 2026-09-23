@@ -42,11 +42,13 @@ jobs:
           node --check longitudinal-engine.js
           node --check recovery-engine.js
           node --check alpha1-planner.js
+          node --check improvement-loop.js
           grep -q 'alpha1-planner.js' index.html
           grep -q 'recovery-engine.js' index.html
           grep -q 'longitudinal-engine.js' index.html
           grep -q 'sapix-analyzer.js' index.html
           grep -q 'parent-dashboard.js' index.html
+          grep -q 'improvement-loop.js' index.html
 
       - name: Synthetic SAPIX parser test
         shell: bash
@@ -264,6 +266,16 @@ jobs:
           grep -q 'noindex' japanese/index.html
           grep -q '4科ホーム' japanese/app.js
 
+      - name: Four-subject improvement loop gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tools/test-improvement-loop.mjs
+          node tools/test-adaptive-quality.mjs
+          node tools/test-root-app-cache.mjs
+          grep -q 'ImprovementLoop.parentHTML()' parent-dashboard.js
+          grep -q 'AI_EVAL_OPS_EVALUATOR_REQUEST' improvement-loop.js
+
       - name: Alpha1-first priority gate
         shell: bash
         run: |
@@ -275,9 +287,9 @@ jobs:
           grep -q '"start_url": "./?home=1"' manifest.webmanifest
           grep -q '>4</text>' assets/icon.svg
           grep -q '>GO!</text>' assets/icon.svg
-          grep -q 'sansuo-champion-v18-adaptive-quality' sw.js
+          grep -q 'sansuo-champion-v19-improvement-loop' sw.js
           grep -q 'function alpha1Ready()' japanese/app.js
-          grep -q 'kokugo-lab-v4-calm-quest' japanese/sw.js
+          grep -q 'kokugo-lab-v5-improvement-loop' japanese/sw.js
 
       - name: Kid-facing copy gate
         shell: bash
