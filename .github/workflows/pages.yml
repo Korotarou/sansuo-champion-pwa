@@ -270,6 +270,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          node tools/local-runtime.mjs build
           node tools/test-improvement-loop.mjs
           node tools/test-adaptive-quality.mjs
           node tools/test-root-app-cache.mjs
