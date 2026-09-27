@@ -13,6 +13,7 @@
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="./intensity.css" />
+  <link rel="stylesheet" href="./evolution.css" />
 </head>
 <body>
   <div id="fxLayer" class="fx-layer" aria-hidden="true"></div>
@@ -56,6 +57,34 @@
         <div class="drive-copy"><span id="driveMessage">まず1問。正解すると起動。</span><b id="nextUnlock">次の覚醒まで 100 DOPA</b></div>
         <div class="drive-meter"><span id="driveMeter"></span></div>
         <div id="driveMilestones" class="drive-milestones"></div>
+      </section>
+
+      <section class="evolution-card">
+        <div class="evolution-grid">
+          <div class="creature-stage">
+            <div class="creature-pedestal"></div>
+            <div id="dopaCreature" class="dopa-creature stage-0" aria-label="コアエッグ">
+              <i class="horn left"></i><i class="horn right"></i><i class="wing left"></i><i class="wing right"></i><i class="tail"></i>
+              <div class="body"></div><i class="eye left"></i><i class="eye right"></i><i class="core"></i>
+            </div>
+          </div>
+          <div class="evo-info">
+            <span class="eyebrow">DOPA CREATURE</span>
+            <h2 id="creatureName">CORE EGG</h2>
+            <div id="creatureStage" class="evo-sub">コアエッグ</div>
+            <div class="evo-stats">
+              <div class="evo-stat"><span>CURRENT WORLD</span><strong id="worldName">起動前デッキ</strong></div>
+              <div class="evo-stat"><span>BOSS BREAK</span><strong><span id="bossClearCount">0</span> 回</strong></div>
+            </div>
+            <div class="evo-progress"><span id="evoMeter"></span></div>
+            <div id="evoNext" class="evo-next">次の進化まで 100 DOPA</div>
+            <div id="evoCoreGrid" class="evo-core-grid"></div>
+          </div>
+        </div>
+        <div class="world-strip">
+          <h3>WORLD EVOLUTION</h3>
+          <div id="worldMap" class="world-map"></div>
+        </div>
       </section>
 
       <section class="run-card">
@@ -110,6 +139,8 @@
 
   <div id="rewardPop" class="reward-pop" role="status" aria-live="polite"></div>
   <div id="rankPop" class="rank-pop" aria-hidden="true"></div>
+  <div id="evolutionPop" class="evolution-pop" aria-hidden="true"></div>
   <script src="./app.js"></script>
+  <script src="./evolution.js"></script>
 </body>
 </html>
