@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#090b18" />
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="4科DOPA" />
+  <title>4科クエスト DOPA版</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="fxLayer" class="fx-layer" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="DOPAホームへ">
+      <span class="brand-orb">D</span>
+      <span><strong>4科クエスト DOPA</strong><small>正解でためる。自力で伸ばす。</small></span>
+    </a>
+    <div class="top-stats">
+      <div><span>DOPA</span><strong id="dopaTotal">0</strong></div>
+      <div><span>COMBO</span><strong id="comboCount">0</strong></div>
+      <div><span>FX Lv</span><strong id="fxLevel">1</strong></div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section id="homePanel" class="home-panel">
+      <div class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow">DOPA RUN</div>
+          <h1>正解するほど、<br><span>画面が覚醒する。</span></h1>
+          <p>4科を行き来して正解を積み上げよう。DOPAは正解したときだけ増える。まちがえても減らない。</p>
+          <div class="hero-actions">
+            <button id="startRunBtn" class="cta">8問 PERFECT RUN を始める</button>
+            <button id="openLastBtn" class="ghost">前回の科目を開く</button>
+          </div>
+        </div>
+        <div class="reactor">
+          <div class="reactor-ring r1"></div><div class="reactor-ring r2"></div><div class="reactor-ring r3"></div>
+          <div class="reactor-core"><span id="reactorValue">0</span><small>DOPA</small></div>
+        </div>
+      </div>
+
+      <section class="run-card">
+        <div class="run-head">
+          <div><span class="eyebrow">PERFECT RUN</span><h2>100点でEXテスト解放</h2></div>
+          <span id="runStatus" class="run-status">未開始</span>
+        </div>
+        <div class="score-row"><strong id="runScore">—</strong><span>/100</span></div>
+        <div class="meter"><span id="runMeter"></span></div>
+        <div id="subjectTicks" class="subject-ticks"></div>
+        <p id="runNote" class="run-note">8回答・4科すべてに挑戦して、8/8正解なら100点。</p>
+      </section>
+
+      <section class="subject-section">
+        <div class="section-head"><div><span class="eyebrow">SELECT STAGE</span><h2>4科ステージ</h2></div><span class="mini-note">元アプリは変更していません</span></div>
+        <div class="subject-grid">
+          <button class="subject-card math" data-subject="math"><span class="subject-glyph">算</span><div><b>算数</b><small>条件整理・図形・整数・思考</small></div><em>ENTER →</em></button>
+          <button class="subject-card japanese" data-subject="japanese"><span class="subject-glyph">国</span><div><b>国語</b><small>語彙・論理・読解・記述</small></div><em>ENTER →</em></button>
+          <button class="subject-card science" data-subject="science"><span class="subject-glyph">理</span><div><b>理科</b><small>知識・原理・実験・考察</small></div><em>ENTER →</em></button>
+          <button class="subject-card social" data-subject="social"><span class="subject-glyph">社</span><div><b>社会</b><small>地理・資料・因果・初見</small></div><em>ENTER →</em></button>
+        </div>
+      </section>
+
+      <section id="extraCard" class="extra-card locked">
+        <div><span class="eyebrow">EXTRA TEST</span><h2 id="extraTitle">LOCKED</h2><p id="extraNote">PERFECT RUNで100点を取ると解放。</p></div>
+        <button id="extraBtn" disabled>EXテストへ</button>
+      </section>
+
+      <section class="safety-strip">
+        <b>この版のルール</b>
+        <span>ランダム報酬なし</span><span>DOPA没収なし</span><span>時間切れ罰なし</span><span>フィーバーは5正解で自動終了</span>
+      </section>
+    </section>
+
+    <section id="stagePanel" class="stage-panel" hidden>
+      <div class="stage-toolbar">
+        <button id="backHomeBtn" class="ghost">← DOPAホーム</button>
+        <div id="stageSubject" class="stage-subject">算数</div>
+        <div class="stage-live"><span>+DOPA</span><strong id="liveGain">0</strong></div>
+      </div>
+      <iframe id="subjectFrame" title="4科学習ステージ" allow="fullscreen"></iframe>
+    </section>
+
+    <section id="extraPanel" class="extra-panel" hidden>
+      <div class="extra-top"><button id="extraBackBtn" class="ghost">← ホーム</button><div><span class="eyebrow">EXTRA TEST</span><h2>8問・4科MIX</h2></div><div class="extra-score"><span id="extraNow">0</span>/8</div></div>
+      <div class="ex-progress"><span id="exProgress"></span></div>
+      <article id="extraQuestion" class="extra-question"></article>
+    </section>
+  </main>
+
+  <div id="rewardPop" class="reward-pop" role="status" aria-live="polite"></div>
+  <script src="./app.js"></script>
+</body>
+</html>
